@@ -1,0 +1,161 @@
+- id: f01
+  type: pref
+  subject: user
+  rel: prefers
+  object: no Co-Authored-By lines in git commits
+- id: f02
+  type: pref
+  subject: user
+  rel: prefers
+  object: caveman-terse responses to save tokens
+- id: f03
+  type: pref
+  subject: user
+  rel: uses
+  object: Arch Linux with zsh shell
+- id: f04
+  type: pref
+  subject: user
+  rel: role
+  object: AI-security researcher targeting top-tier paper + job portfolio
+- id: f05
+  type: constraint
+  subject: project Securin
+  rel: constraint
+  object: 2-month timeline, team of 4, no confidential-compute hardware
+  why: scopes attestation to key-signed, defers zkML to toy-scale
+- id: f06
+  type: constraint
+  subject: prov-memory
+  rel: constraint
+  object: fully local, no cloud embedding API
+  why: airgap requirement; cloud embeddings would exfiltrate chat text
+- id: f07
+  type: constraint
+  subject: memory tier
+  rel: must
+  object: inject distilled cards not verbatim transcripts
+  why: verbatim burns context tokens; fetch on demand instead
+- id: f08
+  type: decision
+  subject: team
+  rel: chose
+  object: Model-Attested Authority (PACT-MA) as paper novelty
+  why: agentic security is open hiring lane; reuses existing proof moat
+- id: f09
+  type: decision
+  subject: team
+  rel: chose
+  object: markdown frontmatter cards as primary memory format
+  why: token-lean, human+AI readable, git-diffable
+- id: f10
+  type: decision
+  subject: team
+  rel: rejected
+  object: rebuilding local sqlite-vec memory layer
+  why: commodity; AIngram/Memory-Vault already do it
+- id: f11
+  type: decision
+  subject: team
+  rel: anchored novelty on
+  object: verifiable span-level provenance surviving LLM extraction
+  why: only unoccupied gap after competitor audit
+- id: f12
+  type: code
+  subject: schema.py
+  rel: defines
+  object: memory_entries table at line 24
+- id: f13
+  type: code
+  subject: store.py
+  rel: signs entries at line 184 via
+  object: session.sign(entry_id) Ed25519
+- id: f14
+  type: code
+  subject: cass connectors dir
+  rel: contains
+  object: claude_code.rs codex.rs antigravity.rs adapters
+- id: f15
+  type: code
+  subject: trust/signing.py
+  rel: implements
+  object: sign_entry returning 128-char hex Ed25519 signature at line 38
+- id: f16
+  type: rel
+  subject: AIngram_boz
+  rel: is closest competitor to
+  object: prov-memory project
+- id: f17
+  type: rel
+  subject: cass
+  rel: ingests transcripts of
+  object: 22 coding agents
+- id: f18
+  type: rel
+  subject: Ed25519 signature
+  rel: binds
+  object: content-addressed entry_id to agent pubkey
+- id: f19
+  type: rel
+  subject: LLM extraction
+  rel: severs
+  object: exact source span provenance
+  why: paraphrasing loses char offsets into original transcript
+- id: f20
+  type: rel
+  subject: memory poisoning
+  rel: is
+  object: OWASP top agentic risk 2026
+- id: f21
+  type: fact
+  subject: PAM protocol
+  rel: authored by
+  object: Microsoft, arxiv 2605.11032
+- id: f22
+  type: fact
+  subject: OKF
+  rel: published by
+  object: Google, markdown+YAML frontmatter standard
+- id: f23
+  type: fact
+  subject: Mem0
+  rel: has
+  object: ~48K GitHub stars, leads community adoption
+- id: f24
+  type: fact
+  subject: Zep/Graphiti
+  rel: scores
+  object: 63.8% on LongMemEval vs Mem0 49.0%
+- id: f25
+  type: fact
+  subject: TokenMizer
+  rel: achieves
+  object: 47.3% token reduction via graph session memory
+- id: f26
+  type: decision
+  subject: storage tier
+  rel: uses
+  object: sqlite + FTS5 + sqlite-vec
+  why: single file, indexed, never fully loaded into context
+- id: f27
+  type: constraint
+  subject: embeddings
+  rel: must run via
+  object: ollama or onnx local model
+  why: no api_key, no external POST = real airgap test
+- id: f28
+  type: pref
+  subject: user
+  rel: wants
+  object: secure usable-by-everyone open-source project
+- id: f29
+  type: rel
+  subject: prov-memory
+  rel: distinct from but reuses idea of
+  object: Securin PACT-MA paper
+- id: f30
+  type: decision
+  subject: subagents
+  rel: unusable because
+  object: this environment denies Read/Bash/Write to spawned agents
+  why: all audit+benchmark work must run in main thread

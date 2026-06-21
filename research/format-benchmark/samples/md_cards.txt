@@ -1,0 +1,30 @@
+- **user** prefers no Co-Authored-By lines in git commits
+- **user** prefers caveman-terse responses to save tokens
+- **user** uses Arch Linux with zsh shell
+- **user** role AI-security researcher targeting top-tier paper + job portfolio
+- **project Securin** constraint 2-month timeline, team of 4, no confidential-compute hardware — why: scopes attestation to key-signed, defers zkML to toy-scale
+- **prov-memory** constraint fully local, no cloud embedding API — why: airgap requirement; cloud embeddings would exfiltrate chat text
+- **memory tier** must inject distilled cards not verbatim transcripts — why: verbatim burns context tokens; fetch on demand instead
+- **team** chose Model-Attested Authority (PACT-MA) as paper novelty — why: agentic security is open hiring lane; reuses existing proof moat
+- **team** chose markdown frontmatter cards as primary memory format — why: token-lean, human+AI readable, git-diffable
+- **team** rejected rebuilding local sqlite-vec memory layer — why: commodity; AIngram/Memory-Vault already do it
+- **team** anchored novelty on verifiable span-level provenance surviving LLM extraction — why: only unoccupied gap after competitor audit
+- **schema.py** defines memory_entries table at line 24
+- **store.py** signs entries at line 184 via session.sign(entry_id) Ed25519
+- **cass connectors dir** contains claude_code.rs codex.rs antigravity.rs adapters
+- **trust/signing.py** implements sign_entry returning 128-char hex Ed25519 signature at line 38
+- **AIngram_boz** is closest competitor to prov-memory project
+- **cass** ingests transcripts of 22 coding agents
+- **Ed25519 signature** binds content-addressed entry_id to agent pubkey
+- **LLM extraction** severs exact source span provenance — why: paraphrasing loses char offsets into original transcript
+- **memory poisoning** is OWASP top agentic risk 2026
+- **PAM protocol** authored by Microsoft, arxiv 2605.11032
+- **OKF** published by Google, markdown+YAML frontmatter standard
+- **Mem0** has ~48K GitHub stars, leads community adoption
+- **Zep/Graphiti** scores 63.8% on LongMemEval vs Mem0 49.0%
+- **TokenMizer** achieves 47.3% token reduction via graph session memory
+- **storage tier** uses sqlite + FTS5 + sqlite-vec — why: single file, indexed, never fully loaded into context
+- **embeddings** must run via ollama or onnx local model — why: no api_key, no external POST = real airgap test
+- **user** wants secure usable-by-everyone open-source project
+- **prov-memory** distinct from but reuses idea of Securin PACT-MA paper
+- **subagents** unusable because this environment denies Read/Bash/Write to spawned agents — why: all audit+benchmark work must run in main thread
