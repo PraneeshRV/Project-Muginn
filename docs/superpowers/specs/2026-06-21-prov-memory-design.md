@@ -1,10 +1,12 @@
 # prov-memory — Design Spec
 
-**Date:** 2026-06-21 · **Status:** approved (pending written-spec review) · **Name:** `prov-memory` (placeholder)
+**Date:** 2026-06-21 · **Status:** approved; **revised 2026-06-21 (rev2)** after honest audit · **Name:** `prov-memory` (placeholder)
+
+> **rev2 re-positioning (post-audit):** Lead with **grounded memory + staleness detection**, not "tamper-proof security" (which is theater for a local single-user tool — signing only earns its keep across trust boundaries). Concrete changes: (1) **per-turn hashing** `turn_sha256 = sha256(turn.text)` replaces per-file sha — the per-file sha falsely invalidated every fact whenever Claude Code *appended* to a live session log; (2) add **staleness/supersession**: facts carry `topic_key` + `created_at`; a newer fact on the same topic marks the older `stale` and recall hides stale by default — this is the real edge over AIngram's ungrounded temporal KG; (3) signing stays in the schema but is framed **cross-trust-ready**, not a local security guarantee; (4) add a **small eval hook** so there is a measurable recall claim. Verifiable source *citations* + staleness are the honest, useful core.
 
 ## 1. Summary
 
-Local-first, cross-agent memory where every fact is a **signed verbatim quote** from an AI-coding-agent transcript that can be re-opened and byte-verified against its source. Distilled memory that you cannot poison or hallucinate into, because a fact that does not physically exist in a real signed transcript is rejected at write time.
+Local-first, cross-agent memory where every fact is a **verbatim quote** from an AI-coding-agent transcript that can be re-opened and byte-verified against its exact source turn, with **temporal staleness detection** so superseded facts stop surfacing. Optionally Ed25519-signed for cross-trust transfer. You cannot hallucinate a fact into memory: a quote not physically present in a real transcript turn is rejected at write time.
 
 Standalone open-source project (Apache-2.0). Reuses the *Model-Attested Authority* idea from the separate Securin/PACT-MA research but is independent of it.
 
