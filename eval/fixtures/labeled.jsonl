@@ -1,0 +1,8 @@
+{"text":"Decision: adopt sqlite-vec for local vectors.","salient":true}
+{"text":"The weather was nice today.","salient":false}
+{"text":"Constraint: must run fully offline.","salient":true}
+{"text":"I had coffee this morning.","salient":false}
+{"text":"TODO: write the README.","salient":true}
+{"text":"We chatted about the weekend.","salient":false}
+{"text":"Prefer markdown cards because they are token-lean.","salient":true}
+{"text":"See parser.py:42 for the bug.","salient":true}
