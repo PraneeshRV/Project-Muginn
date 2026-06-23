@@ -19,6 +19,8 @@ muginn-render = { path = "../render" }
 muginn-vault = { path = "../vault" }
 muginn-compile = { path = "../compile" }
 muginn-server = { path = "../server" }
+muginn-eval = { path = "../eval" }
+serde_json = { workspace = true }
 clap = { workspace = true }
 anyhow = { workspace = true }
 dirs-next = { workspace = true }
