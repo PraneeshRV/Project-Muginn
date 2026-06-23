@@ -1,3 +1,4 @@
+use muginn_compile::{EnforcedPage, SentenceVerdict};
 use muginn_core::{Atom, Citation};
 use std::path::{Path, PathBuf};
 
@@ -172,6 +173,70 @@ pub fn write_stale_note(
     body.push_str(&render_diff(&old.quote, &new.quote));
     std::fs::write(&path, body).expect("write stale note");
     path
+}
+
+// ── Task 2.3: compiled page → Obsidian note ─────────────────────────────────
+
+/// Write a compiled page to `<root>/vault/<workspace>/<project>/pages/<topic>.md`.
+/// Verified sentences get inline `[[<id8>]]` wikilinks; quarantined lines go in a warning callout.
+pub fn write_page_note(
+    root: &Path,
+    workspace: &str,
+    project: &str,
+    topic: &str,
+    page: &EnforcedPage,
+    compiler_model: &str,
+) -> PathBuf {
+    let dir = root.join("vault").join(workspace).join(project).join("pages");
+    std::fs::create_dir_all(&dir).expect("create pages dir");
+    let path = dir.join(format!("{}.md", sanitize_topic(topic)));
+    let body = page_note_body(topic, page, compiler_model);
+    std::fs::write(&path, body).expect("write page note");
+    path
+}
+
+fn sanitize_topic(topic: &str) -> String {
+    topic
+        .chars()
+        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+        .collect::<String>()
+        .trim_matches('-')
+        .to_string()
+}
+
+fn page_note_body(topic: &str, page: &EnforcedPage, compiler_model: &str) -> String {
+    use chrono::Utc;
+    let compiled_at = Utc::now().to_rfc3339();
+    let coverage_pct = (page.coverage * 100.0).round() as u32;
+
+    let mut body = format!(
+        "---\ntopic: {topic}\ncoverage: {coverage_pct}%\ncompiler_model: {compiler_model}\ncompiled_at: {compiled_at}\ndirty: false\n---\n\n"
+    );
+
+    // Verified sentences with wikilinks
+    for verdict in &page.verdicts {
+        if let SentenceVerdict::Verified(s) = verdict {
+            let links: String = s
+                .cited_atom_ids
+                .iter()
+                .map(|id| format!("[[{}]]", &id[..8.min(id.len())]))
+                .collect::<Vec<_>>()
+                .join(" ");
+            body.push_str(&format!("{} {}\n\n", s.text, links));
+        }
+    }
+
+    // Quarantined callout
+    let quarantined = page.quarantined();
+    if !quarantined.is_empty() {
+        body.push_str("> [!warning] Unverified\n");
+        for (s, reason) in &quarantined {
+            body.push_str(&format!("> - {} *({})*\n", s.text, reason));
+        }
+        body.push('\n');
+    }
+
+    body
 }
 
 fn render_diff(old: &str, new: &str) -> String {
