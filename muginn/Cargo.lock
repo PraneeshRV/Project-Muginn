@@ -726,6 +726,7 @@ dependencies = [
  "muginn-compile",
  "muginn-core",
  "muginn-crypto",
+ "muginn-eval",
  "muginn-render",
  "muginn-select",
  "muginn-server",
@@ -733,6 +734,7 @@ dependencies = [
  "muginn-vault",
  "muginn-verify",
  "serde",
+ "serde_json",
  "tempfile",
  "tokio",
  "toml",
@@ -768,6 +770,24 @@ dependencies = [
  "rand_core",
  "serde_json",
  "sha2",
+]
+
+[[package]]
+name = "muginn-eval"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "muginn-adapters",
+ "muginn-compile",
+ "muginn-core",
+ "muginn-crypto",
+ "muginn-render",
+ "muginn-select",
+ "muginn-store",
+ "muginn-verify",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

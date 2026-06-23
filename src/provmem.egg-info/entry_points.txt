@@ -1,2 +1,0 @@
-[console_scripts]
-provmem = provmem.cli:main

@@ -1,7 +1,0 @@
-cryptography>=42
-
-[dev]
-pytest>=8
-
-[mcp]
-fastmcp>=2

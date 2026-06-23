@@ -1,125 +1,55 @@
-# prov-memory
+# Muginn
 
-Local-first, cross-agent memory where every fact is a verbatim quote from a
-coding-agent transcript with a byte-verifiable citation back to its exact source
-turn, plus staleness detection so superseded facts stop surfacing.
+Verifiable memory for AI agents. Every fact is a verbatim quote from a native agent
+transcript, cryptographically bound to the exact byte-span it came from, so a reader can
+re-open the source and confirm no fact was hallucinated or poisoned during distillation.
 
-**Honest framing:** For a single-user local tool, Ed25519 signing is not a
-security guarantee against yourself — it is there so memory can later cross
-trust boundaries. The real day-one value is **grounded citations** (no
-hallucinated facts; every quote physically exists in a real transcript turn)
-plus **staleness detection** (newer fact on same topic hides the old one).
+**Headline guarantees (measured offline, zero cloud calls):**
+- 100% poison rejection — fabricated citations always quarantined
+- ≥95% provenance coverage — claims from real, unmodified atoms verify `ok`
+- 0 cloud calls by default — local-first, airgap-safe
 
-Agents supported: Claude Code, Codex CLI, Antigravity.
-
-License: Apache-2.0.
+Agents supported: Claude Code, Codex CLI, Cursor, ChatGPT. License: Apache-2.0.
 
 ---
 
-## Quickstart
+## Implementation
+
+The project is a Rust workspace under [`muginn/`](muginn/). See
+[muginn/README.md](muginn/README.md) for the full quickstart, MCP config, and architecture.
 
 ```bash
-pip install -e .
+cd muginn
+cargo install --path crates/cli
 
-# ingest a Claude Code session
-provmem ingest claude_code ~/.claude/projects/<slug>/<uuid>.jsonl
-
-# search memory
-provmem recall "Ed25519"
+muginn ingest claude_code ~/.claude/projects/<slug>/<uuid>.jsonl
+muginn recall "Ed25519"
+muginn eval          # prints provenance / poison / staleness / selector metrics
 ```
 
-`recall` prints matching facts as markdown cards and shows a live `verify`
-status for each one.
+The earlier Python prototype has been retired; the Rust workspace is the canonical
+implementation (44 tests green, full parity with the original 32-test prototype).
 
 ---
 
-## How verification works
+## How it works
 
-`verify(fact)` re-opens the source transcript, locates the exact turn by
-`turn_id`, and byte-compares `turn.text.encode()[start:end]` against the stored
-`quote`. It also checks the Ed25519 signature over `content_hash`.
+`verify(atom)` re-opens the source transcript, locates the exact turn by `turn_id`, and
+byte-compares `turn.text.as_bytes()[start..end]` against the stored quote, plus an Ed25519
+signature check over `content_hash`. Tamper-detection is per-turn, not per-file — appending
+new turns to a live session never invalidates existing atoms.
 
-Possible statuses:
-
-| Status | Meaning |
-|---|---|
-| `ok` | Quote matches source byte-for-byte; signature valid |
-| `bad-signature` | Ed25519 check failed (key mismatch or tampered hash) |
-| `source-missing` | Transcript file no longer exists at recorded path |
-| `turn-missing` | File exists but the turn_id is gone |
-| `source-modified` | Turn text changed since ingest (sha256 mismatch) |
-| `span-mismatch` | File and turn present but byte range no longer matches quote |
-
-Tamper-detection is scoped to the specific turn a fact came from, not the whole
-file. Appending new turns to a live session never invalidates existing facts —
-this is the key design choice (`turn_sha256` hashes per-turn text, not the full
-file).
-
----
-
-## Staleness
-
-Facts carry a `topic_key` (first four alphanumeric tokens of the quote,
-lowercased). When a newer fact with the same `topic_key` is stored, the older
-fact is marked `stale=True` and hidden from `recall` by default.
-
-To surface stale facts via the Python API:
-
-```python
-store.search("Ed25519", include_stale=True)
-```
-
-The CLI `recall` command always hides stale facts (same default as the API).
-
----
-
-## MCP integration
-
-Register `python -m provmem.mcp_server` as an MCP server so Claude Code, Codex,
-or any MCP-aware agent can call it.
-
-### Claude Code — `.claude/settings.json`
-
-```json
-{
-  "mcpServers": {
-    "prov-memory": {
-      "command": "python",
-      "args": ["-m", "provmem.mcp_server"],
-      "env": {"PROVMEM_DB": "~/.provmem.db"}
-    }
-  }
-}
-```
-
-### Codex — `~/.codex/config.json`
-
-```json
-{
-  "mcpServers": {
-    "prov-memory": {
-      "command": "python",
-      "args": ["-m", "provmem.mcp_server"],
-      "env": {"PROVMEM_DB": "~/.provmem.db"}
-    }
-  }
-}
-```
-
-### Available tools
-
-| Tool | Signature | Returns |
-|---|---|---|
-| `recall` | `recall(query, k=10)` | Markdown cards for top-k matching facts |
-| `verify` | `verify(fact_id)` | Status string (see table above) |
-| `cite` | `cite(fact_id)` | JSON source citation `{agent, session_id, turn_id, span, ...}` |
+The compile layer enforces that every compiled sentence cites at least one atom that
+verifies `ok`; missing, tampered, or hallucinated citations are quarantined, never silently
+included. That is the anti-poisoning moat.
 
 ---
 
 ## Research artifacts
 
 - [research/AUDIT.md](research/AUDIT.md) — competitor audit (AIngram, cass, others)
-- [research/format-benchmark/RESULTS.md](research/format-benchmark/RESULTS.md) — token-efficiency benchmark; markdown cards beat JSON by ~61%, KG triples densest but lossy
+- [research/format-benchmark/RESULTS.md](research/format-benchmark/RESULTS.md) — token-efficiency benchmark; markdown cards beat JSON by ~61%
+- [docs/superpowers/](docs/superpowers/) — design specs and the master implementation plan
 
 ---
 
