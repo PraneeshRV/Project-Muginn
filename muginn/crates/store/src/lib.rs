@@ -186,6 +186,19 @@ impl Store {
             )
     }
 
+    pub fn get_all(&self, include_stale: bool) -> Vec<Atom> {
+        let stale_clause = if include_stale { "" } else { "WHERE stale = 0" };
+        let sql = format!("SELECT atom_id FROM atoms {stale_clause} ORDER BY created_at ASC");
+        let ids: Vec<String> = match self.conn.prepare(&sql) {
+            Ok(mut stmt) => stmt
+                .query_map([], |row| row.get(0))
+                .map(|rows| rows.flatten().collect())
+                .unwrap_or_default(),
+            Err(_) => return vec![],
+        };
+        ids.iter().filter_map(|id| self.get(id)).collect()
+    }
+
     pub fn search(&self, query: &str, k: usize, include_stale: bool) -> Vec<Atom> {
         let stale_clause = if include_stale { "" } else { "AND a.stale = 0" };
         let sql = format!(
