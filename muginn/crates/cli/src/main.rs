@@ -217,8 +217,8 @@ async fn main() -> Result<()> {
 
             // ── Selector recall / FP rate ────────────────────────────────────
             let fixture_path = selector_fixture.unwrap_or_else(|| {
-                // Default: look for the bundled labeled.jsonl relative to cwd
-                "eval/fixtures/labeled.jsonl".to_string()
+                // Default: bundled fixture, relative to the workspace root (run from muginn/)
+                "crates/eval/fixtures/labeled.jsonl".to_string()
             });
             if std::path::Path::new(&fixture_path).exists() {
                 let rows: Vec<serde_json::Value> = std::fs::read_to_string(&fixture_path)
