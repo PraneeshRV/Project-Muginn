@@ -771,6 +771,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "muginn-eval"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "muginn-adapters",
+ "muginn-compile",
+ "muginn-core",
+ "muginn-crypto",
+ "muginn-render",
+ "muginn-select",
+ "muginn-store",
+ "muginn-verify",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "muginn-render"
 version = "0.1.0"
 dependencies = [
