@@ -5,7 +5,8 @@ use muginn_crypto::new_keypair;
 use muginn_render::render_cards;
 use muginn_select::select_spans;
 use muginn_store::Store;
-use muginn_vault::{resolve_project, write_atom_note, write_stale_note};
+use muginn_compile::{enforce_for_topic, NullCompiler, Compiler};
+use muginn_vault::{resolve_project, write_atom_note, write_page_note, write_stale_note};
 use muginn_verify::verify_atom;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
@@ -29,6 +30,11 @@ enum Cmd {
         k: usize,
     },
     Sync {
+        #[arg(long, default_value = ".")]
+        root: String,
+    },
+    Compile {
+        topic: String,
         #[arg(long, default_value = ".")]
         root: String,
     },
@@ -134,6 +140,26 @@ fn main() -> Result<()> {
                 written += 1;
             }
             println!("synced {written} atoms to {root}");
+        }
+        Cmd::Compile { topic, root } => {
+            let atoms = store.search(&topic, 50, false);
+            if atoms.is_empty() {
+                println!("no atoms for topic: {topic}");
+                return Ok(());
+            }
+            let draft = NullCompiler.compile(&topic, &atoms);
+            let page = enforce_for_topic(&draft, &store, &topic);
+            println!(
+                "compiled {} sentences, coverage {:.0}%, {} quarantined",
+                page.verdicts.len(),
+                page.coverage * 100.0,
+                page.quarantined().len()
+            );
+            // Write page note using first atom's project resolution
+            let (ws, proj) = resolve_project(&atoms[0].citation);
+            let root_path = std::path::Path::new(&root);
+            let path = write_page_note(root_path, &ws, &proj, &topic, &page, "null");
+            println!("page written: {}", path.display());
         }
         Cmd::Recall { query, k } => {
             let atoms = store.search(&query, k, false);
