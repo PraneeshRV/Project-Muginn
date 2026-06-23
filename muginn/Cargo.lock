@@ -553,6 +553,7 @@ dependencies = [
  "clap",
  "dirs-next",
  "muginn-adapters",
+ "muginn-compile",
  "muginn-core",
  "muginn-crypto",
  "muginn-render",
@@ -560,6 +561,19 @@ dependencies = [
  "muginn-store",
  "muginn-vault",
  "muginn-verify",
+]
+
+[[package]]
+name = "muginn-compile"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "muginn-core",
+ "muginn-crypto",
+ "muginn-store",
+ "muginn-verify",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]
@@ -615,6 +629,8 @@ dependencies = [
 name = "muginn-vault"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "muginn-compile",
  "muginn-core",
  "serde_json",
  "tempfile",
