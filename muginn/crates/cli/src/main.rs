@@ -3,11 +3,11 @@ mod config;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use config::Config;
+use muginn_compile::{enforce_for_topic, Compiler, NullCompiler};
 use muginn_crypto::new_keypair;
 use muginn_render::render_cards;
 use muginn_select::select_spans;
 use muginn_store::Store;
-use muginn_compile::{enforce_for_topic, NullCompiler, Compiler};
 use muginn_vault::{resolve_project, write_atom_note, write_page_note, write_stale_note};
 use muginn_verify::verify_atom;
 use std::fs;
@@ -46,6 +46,15 @@ enum Cmd {
         topic: String,
         #[arg(long, default_value = ".")]
         root: String,
+    },
+    /// Run eval harness: provenance coverage, poison rejection, staleness, selector recall.
+    Eval {
+        /// Path to labeled selector fixture (JSONL: {"text":"...","salient":bool})
+        #[arg(long)]
+        selector_fixture: Option<String>,
+        /// Number of fabricated atoms to inject for poison rejection test
+        #[arg(long, default_value = "10")]
+        poison_n: usize,
     },
 }
 
@@ -202,6 +211,77 @@ async fn main() -> Result<()> {
                 let id8 = &atom.atom_id[..8.min(atom.atom_id.len())];
                 println!("  verify[{id8}] = {status}");
             }
+        }
+        Cmd::Eval { selector_fixture, poison_n } => {
+            println!("muginn eval\n");
+
+            // ── Selector recall / FP rate ────────────────────────────────────
+            let fixture_path = selector_fixture.unwrap_or_else(|| {
+                // Default: look for the bundled labeled.jsonl relative to cwd
+                "eval/fixtures/labeled.jsonl".to_string()
+            });
+            if std::path::Path::new(&fixture_path).exists() {
+                let rows: Vec<serde_json::Value> = std::fs::read_to_string(&fixture_path)
+                    .unwrap_or_default()
+                    .lines()
+                    .filter(|l| !l.trim().is_empty())
+                    .filter_map(|l| serde_json::from_str(l).ok())
+                    .collect();
+                let sel = muginn_eval::eval_selector(&rows);
+                println!("selector recall/fp  (fixture: {fixture_path})");
+                println!("  recall            {:.2}", sel.recall);
+                println!("  false_positive    {:.2}", sel.false_positive_rate);
+                println!("  salient           {}", sel.n_salient);
+                println!("  non-salient       {}", sel.n_nonsalient);
+            } else {
+                println!("selector fixture not found at {fixture_path} — skipping selector eval");
+                println!("  hint: run from project root or pass --selector-fixture <path>");
+            }
+            println!();
+
+            // ── Provenance coverage + format benchmark ────────────────────────
+            let all_atoms = store.get_all(false);
+            if all_atoms.is_empty() {
+                println!("provenance coverage  (no atoms in store — run 'muginn ingest' first)");
+                println!("  coverage          n/a");
+            } else {
+                let prov = muginn_eval::eval_provenance_coverage(&all_atoms, &store);
+                println!("provenance coverage  ({} atoms)", all_atoms.len());
+                println!("  coverage          {:.2}  (target ≥0.95)", prov.coverage);
+                println!("  verified          {}", prov.n_verified);
+                println!("  quarantined       {}", prov.n_quarantined);
+                println!();
+
+                let fmt = muginn_eval::eval_format_overhead(&all_atoms);
+                println!("format overhead  (markdown cards vs JSON)");
+                println!("  md chars          {}", fmt.md_chars);
+                println!("  json chars        {}", fmt.json_chars);
+                println!("  json/md ratio     {:.2}x", fmt.json_overhead_ratio);
+            }
+            println!();
+
+            // ── Poison rejection ─────────────────────────────────────────────
+            let poison = muginn_eval::eval_poison_rejection(&all_atoms, poison_n, &store);
+            println!("poison rejection  ({} fabricated atoms injected)", poison_n);
+            println!("  quarantined       {}/{}", poison.n_quarantined, poison.n_injected);
+            println!("  rejection rate    {:.2}  (target 1.00)", poison.rejection_rate);
+            println!();
+
+            // ── Staleness ────────────────────────────────────────────────────
+            let all_with_stale = store.get_all(true);
+            let n_stale = all_with_stale.iter().filter(|a| a.stale).count();
+            let n_live = all_with_stale.iter().filter(|a| !a.stale).count();
+            let labeled: Vec<(muginn_core::Atom, bool)> = all_with_stale
+                .into_iter()
+                .map(|a| {
+                    let expected_stale = !a.superseded_by.is_empty();
+                    (a, expected_stale)
+                })
+                .collect();
+            let stal = muginn_eval::eval_staleness(&labeled);
+            println!("staleness  (live={n_live}, stale={n_stale})");
+            println!("  precision         {:.2}", stal.precision);
+            println!("  recall            {:.2}", stal.recall);
         }
     }
     Ok(())
