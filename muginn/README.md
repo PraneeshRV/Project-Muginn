@@ -1,17 +1,11 @@
-# muginn
+# Muginn
 
-Verifiable memory for AI agents. Every fact is a verbatim quote from a native agent
-transcript, cryptographically bound to the exact byte-span it came from, so a reader
-can re-open the source and confirm no fact was hallucinated or poisoned during distillation.
+Verifiable memory for AI agents. Every stored fact is a verbatim quote from a native
+agent transcript, cryptographically bound to the exact byte-span it was extracted from.
+Any reader can re-open the source transcript and confirm the quote exists at the recorded
+position — no fact can survive distillation if the source byte-range no longer matches.
 
-**Headline guarantees (measured, offline, no cloud calls):**
-- 100% poison rejection — fabricated citations always quarantined
-- ≥95% provenance coverage — all claims from real, unmodified atoms verify `ok`
-- 0 cloud calls by default — local-first, airgap-safe
-
-Agents supported: Claude Code, Codex CLI, Cursor, ChatGPT.
-
-License: Apache-2.0.
+Agents supported: Claude Code, Codex CLI, Cursor, ChatGPT. License: Apache-2.0.
 
 ---
 
@@ -26,59 +20,66 @@ muginn ingest claude_code ~/.claude/projects/<slug>/<uuid>.jsonl
 # Search memory
 muginn recall "Ed25519"
 
-# Compile a page on a topic
-muginn compile "authentication decisions" --root ./vault
-
-# Sync to Obsidian vault
-muginn sync --root ~/vaults/muginn
+# Run the eval harness against your live store
+muginn eval
 ```
 
-`recall` prints markdown cards and shows a live `verify` status for each atom.
+`recall` prints markdown cards with a live `verify` status per atom.
 
 ---
 
-## How verification works
+## How it works
 
-`verify(atom)` re-opens the source transcript, locates the exact turn by `turn_id`, and
-byte-compares `turn.text.as_bytes()[start..end]` against the stored `quote`. It also
-checks the Ed25519 signature over `content_hash`.
+### Atoms
 
-Possible statuses:
+An *atom* is a salience-selected sentence from a transcript turn. On ingest:
+
+1. Each turn is split into sentences. Salient sentences (containing `decision`,
+   `constraint`, `because`, `prefer`, `remember`, `TODO`, `FIXME`, or a `file:line`
+   reference) are kept; the rest are discarded.
+2. For each kept sentence, muginn records the exact byte range `[start, end)` within the
+   turn text, SHA-256s the entire turn (`turn_sha256`), builds a `content_hash` over the
+   citation + quote, signs it with Ed25519, and stores the atom in SQLite with FTS5 indexing.
+
+### Verification
+
+`verify(atom)` re-opens the source transcript, locates the turn by `turn_id`, and
+byte-compares `turn.text.as_bytes()[start..end]` against the stored quote.
 
 | Status | Meaning |
 |---|---|
-| `ok` | Quote matches source byte-for-byte; signature valid |
-| `bad-signature` | Ed25519 check failed |
-| `source-missing` | Transcript file no longer exists |
-| `turn-missing` | File exists but the turn_id is gone |
-| `source-modified` | Turn text changed since ingest |
-| `span-mismatch` | Byte range no longer matches quote |
+| `ok` | Quote matches source byte-for-byte; Ed25519 signature valid |
+| `bad-signature` | Signature check failed |
+| `source-missing` | Transcript file no longer exists at recorded path |
+| `turn-missing` | File exists but `turn_id` is absent |
+| `source-modified` | Turn text changed since ingest (`turn_sha256` mismatch) |
+| `span-mismatch` | File and turn present but byte range no longer matches quote |
 
-Tamper-detection is per-turn, not per-file. Appending new turns to a live session never
+Tamper detection is per-turn, not per-file: appending new turns to a live session never
 invalidates existing atoms.
 
----
+### Citation enforcement
 
-## Citation enforcement (compile layer)
+`muginn compile <topic>` retrieves atoms, generates prose (via `NullCompiler` by default,
+or a local Ollama endpoint via `MUGINN_COMPILE_URL`), and enforces that every sentence
+cites at least one atom whose `verify` status is `ok`. Sentences with no citation, a
+missing atom, or a non-`ok` verify result are quarantined and surfaced in an Obsidian
+warning callout — never silently included in the compiled page.
 
-```
-muginn compile "auth decisions" --root ./vault
-```
+### Staleness
 
-Each compiled sentence must cite at least one atom that verifies `ok`. Sentences with
-missing, tampered, or hallucinated citations are quarantined and surfaced in an Obsidian
-callout — never silently included.
-
-This is the anti-poisoning moat: an adversary cannot inject a fabricated fact into a
-compiled page because the enforce step re-verifies every citation against the original
-source bytes.
+Atoms carry a `topic_key` (first four alphanumeric tokens, lowercased, hyphen-joined).
+When a newer atom with the same `topic_key` is stored, the older one is marked
+`stale = true` and hidden from `recall` by default. `muginn sync` renders stale atoms
+to `_stale/` in the Obsidian vault with a unified diff — non-destructive.
 
 ---
 
 ## MCP server
 
-Register muginn as an MCP server so Claude Code, Codex, or any MCP-aware agent can
-recall and verify memory directly.
+```bash
+muginn serve   # stdio transport
+```
 
 **Claude Code** (`~/.claude/settings.json`):
 ```json
@@ -99,15 +100,14 @@ name = "muginn"
 command = ["muginn", "serve"]
 ```
 
-Available MCP tools: `recall`, `verify`, `cite`, `ingest`, `compile`.
+MCP tools: `recall`, `verify`, `cite`, `ingest`, `compile`.
 
 ---
 
 ## Multi-agent ingest
 
-Configure `muginn.toml` to ingest from multiple agent transcript roots:
-
 ```toml
+# muginn.toml
 [agents.claude_code]
 roots = ["~/.claude/projects"]
 
@@ -120,25 +120,60 @@ root = "~/vaults/muginn"
 
 ```bash
 muginn ingest-all --config muginn.toml
+muginn sync --root ~/vaults/muginn
 ```
 
 ---
 
-## Staleness
+## Eval harness
 
-Atoms carry a `topic_key` (first four alphanumeric tokens of the quote, lowercased).
-When a newer atom with the same `topic_key` is stored, the older atom is marked
-`stale=true` and hidden from `recall` by default.
+```bash
+muginn eval [--selector-fixture <path>] [--poison-n <n>]
+```
 
-`muginn sync` renders stale atoms to `_stale/` in the Obsidian vault with a unified diff
-against the superseding atom — non-destructive, time-travel friendly.
+Reports:
+- **Selector recall / FP rate** — fraction of salient sentences captured vs non-salient
+  falsely kept, measured against a labeled fixture.
+- **Provenance coverage** — fraction of compiled sentences whose cited atoms verify `ok`
+  on the live store.
+- **Poison rejection** — fraction of injected fabricated atom IDs that are quarantined.
+  Fabricated IDs cannot exist in the store, so rejection is 100% by construction.
+- **Staleness precision / recall** — accuracy of stale labeling against expected supersession.
+- **Format overhead** — character count ratio of JSON serialization vs markdown card output.
+- **LongMemEval / LoCoMo offline subset** — hit@1/3/5 on bundled 5-question fixtures using
+  FTS5 keyword retrieval.
+
+Run `muginn eval` after ingesting real transcripts for numbers that reflect your data.
+
+---
+
+## Workspace layout
+
+```
+muginn/
+  crates/
+    core/      types: Turn, Citation, Atom
+    crypto/    sha256, Ed25519 sign/verify, content_hash, atom_id
+    adapters/  claude_code, codex, cursor, chatgpt transcript parsers
+    select/    salience selector + topic_key
+    store/     SQLite + FTS5, hash chain, staleness
+    verify/    byte-compare verifier
+    render/    markdown card renderer
+    vault/     Obsidian vault writer (atom notes, stale notes, page notes)
+    compile/   compile trait, NullCompiler, citation enforcement
+    server/    rmcp MCP server (stdio)
+    eval/      eval harness + LongMemEval/LoCoMo parity fixtures
+    cli/       clap binary: muginn
+plugin/        Obsidian community plugin (TypeScript)
+```
 
 ---
 
 ## Influences
 
-- [cass](https://github.com/Dicklesworthstone/coding_agent_session_search) — multi-agent connector formats (22 agents); referenced for Claude Code, Codex, Cursor, ChatGPT transcript shapes
-- [AIngram (bozbuilds)](https://github.com/bozbuilds/AIngram) — Ed25519 content-addressed Merkle-DAG + temporal KG; confirmed the attestation design space
-- [basic-memory](https://github.com/basicmachines-co/basic-memory) — Obsidian-native vault pattern
-- [ai-memory](https://github.com/cpacker/ai-memory) — local-first memory semantics
-- Andrej Karpathy — "every LLM output should be grounded and citable"
+- [cass](https://github.com/Dicklesworthstone/coding_agent_session_search) — transcript
+  connector formats for Claude Code, Codex, Cursor, ChatGPT
+- [AIngram (bozbuilds)](https://github.com/bozbuilds/AIngram) — Ed25519 content-addressed
+  hash-chained ledger design
+- [basic-memory](https://github.com/basicmachines-co/basic-memory) — Obsidian-native vault
+  pattern

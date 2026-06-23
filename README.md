@@ -1,22 +1,29 @@
 # Muginn
 
-Verifiable memory for AI agents. Every fact is a verbatim quote from a native agent
-transcript, cryptographically bound to the exact byte-span it came from, so a reader can
-re-open the source and confirm no fact was hallucinated or poisoned during distillation.
+Verifiable memory for AI agents.
 
-**Headline guarantees (measured offline, zero cloud calls):**
-- 100% poison rejection — fabricated citations always quarantined
-- ≥95% provenance coverage — claims from real, unmodified atoms verify `ok`
-- 0 cloud calls by default — local-first, airgap-safe
+Every stored fact is a verbatim quote from a native agent transcript, cryptographically
+bound to the exact byte-span it was extracted from. Any reader can re-open the source
+file and confirm the quote exists at the recorded position — verification is a byte
+comparison, not a semantic judgment.
 
 Agents supported: Claude Code, Codex CLI, Cursor, ChatGPT. License: Apache-2.0.
 
 ---
 
-## Implementation
+## Structure
 
-The project is a Rust workspace under [`muginn/`](muginn/). See
-[muginn/README.md](muginn/README.md) for the full quickstart, MCP config, and architecture.
+```
+muginn/        Rust workspace (CLI, library crates, eval harness)
+plugin/        Obsidian community plugin (TypeScript)
+```
+
+See [`muginn/README.md`](muginn/README.md) for the full quickstart, architecture, and
+MCP config.
+
+---
+
+## Install
 
 ```bash
 cd muginn
@@ -24,32 +31,30 @@ cargo install --path crates/cli
 
 muginn ingest claude_code ~/.claude/projects/<slug>/<uuid>.jsonl
 muginn recall "Ed25519"
-muginn eval          # prints provenance / poison / staleness / selector metrics
 ```
 
-The earlier Python prototype has been retired; the Rust workspace is the canonical
-implementation (44 tests green, full parity with the original 32-test prototype).
-
 ---
 
-## How it works
+## Design properties
 
-`verify(atom)` re-opens the source transcript, locates the exact turn by `turn_id`, and
-byte-compares `turn.text.as_bytes()[start..end]` against the stored quote, plus an Ed25519
-signature check over `content_hash`. Tamper-detection is per-turn, not per-file — appending
-new turns to a live session never invalidates existing atoms.
+**Byte-verifiable citations.** Every atom records `(native_path, turn_id, start, end)`.
+`muginn verify` re-opens the file, finds the turn, and byte-compares the stored span
+against the live text. If the source was modified after ingest, verification fails.
 
-The compile layer enforces that every compiled sentence cites at least one atom that
-verifies `ok`; missing, tampered, or hallucinated citations are quarantined, never silently
-included. That is the anti-poisoning moat.
+**Ed25519 signatures.** Each atom is signed over `sha256(canonical_json(citation, quote))`.
+Signature verification runs before the byte comparison; a tampered `content_hash` is
+caught before the file is even opened.
 
----
+**Citation enforcement.** Compiled prose must cite atoms that verify `ok`. Uncited or
+unverifiable sentences are quarantined — they appear in an Obsidian warning callout and
+are excluded from the main text.
 
-## Research artifacts
+**Staleness.** When a newer atom supersedes an older one on the same topic, the older
+atom is marked stale and moved to `_stale/` in the vault with a unified diff. Nothing
+is deleted.
 
-- [research/AUDIT.md](research/AUDIT.md) — competitor audit (AIngram, cass, others)
-- [research/format-benchmark/RESULTS.md](research/format-benchmark/RESULTS.md) — token-efficiency benchmark; markdown cards beat JSON by ~61%
-- [docs/superpowers/](docs/superpowers/) — design specs and the master implementation plan
+**Local-first.** No network calls in the core path. The MCP server runs over stdio.
+An optional local Ollama endpoint can be configured for the compile layer.
 
 ---
 
