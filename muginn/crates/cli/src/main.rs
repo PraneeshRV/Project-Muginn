@@ -282,6 +282,27 @@ async fn main() -> Result<()> {
             println!("staleness  (live={n_live}, stale={n_stale})");
             println!("  precision         {:.2}", stal.precision);
             println!("  recall            {:.2}", stal.recall);
+            println!();
+
+            // ── LongMemEval / LoCoMo parity (offline subset) ─────────────────
+            let fixture_pairs = [
+                ("crates/eval/fixtures/longmemeval.jsonl", "LongMemEval-offline"),
+                ("crates/eval/fixtures/locomo.jsonl", "LoCoMo-offline"),
+            ];
+            for (path, name) in fixture_pairs {
+                if std::path::Path::new(path).exists() {
+                    let content = std::fs::read_to_string(path).unwrap_or_default();
+                    let rows = muginn_eval::parity::parse_fixture(&content);
+                    let m = muginn_eval::parity::run_parity(&rows, name, 5);
+                    println!("{name}  ({} questions)", m.n_questions);
+                    println!("  hit@1             {:.2}", m.hit_at_1);
+                    println!("  hit@3             {:.2}", m.hit_at_3);
+                    println!("  hit@5             {:.2}", m.hit_at_k);
+                } else {
+                    println!("{name}  fixture not found at {path}");
+                }
+                println!();
+            }
         }
     }
     Ok(())

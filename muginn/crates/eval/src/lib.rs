@@ -3,6 +3,7 @@ use muginn_core::{Atom, Turn};
 use muginn_select::select_spans;
 use muginn_store::Store;
 
+pub mod parity;
 
 // ── Selector eval ────────────────────────────────────────────────────────────
 
