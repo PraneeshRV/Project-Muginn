@@ -1,4 +1,4 @@
-use muginn_adapters::claude_code;
+use muginn_adapters;
 use muginn_core::Atom;
 use muginn_crypto::verify_sig;
 
@@ -12,10 +12,10 @@ pub fn verify_atom(atom: &Atom) -> &'static str {
         return "source-missing";
     }
 
-    let turns = match atom.citation.agent.as_str() {
-        "claude_code" => claude_code::iter_turns(path),
-        _ => return "source-missing",
-    };
+    let turns = muginn_adapters::iter_turns(&atom.citation.agent, path);
+    if turns.is_empty() {
+        return "source-missing";
+    }
     let turn = match turns.iter().find(|t| t.turn_id == atom.citation.turn_id) {
         Some(t) => t,
         None => return "turn-missing",

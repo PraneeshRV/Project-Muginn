@@ -1,6 +1,8 @@
+mod config;
+
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use muginn_adapters::claude_code;
+use config::Config;
 use muginn_crypto::new_keypair;
 use muginn_render::render_cards;
 use muginn_select::select_spans;
@@ -24,6 +26,13 @@ enum Cmd {
         agent: String,
         path: String,
     },
+    /// Ingest all configured agent roots from muginn.toml.
+    IngestAll {
+        #[arg(long, default_value = "muginn.toml")]
+        config: String,
+    },
+    /// Run the MCP server over stdio.
+    Serve,
     Recall {
         query: String,
         #[arg(short, long, default_value = "5")]
@@ -70,13 +79,11 @@ fn load_or_create_keypair() -> Result<(String, String)> {
 }
 
 fn ingest_file(store: &Store, agent: &str, path: &str, priv_hex: &str, pub_hex: &str) -> usize {
-    let turns = match agent {
-        "claude_code" => claude_code::iter_turns(path),
-        other => {
-            eprintln!("unknown agent: {other}");
-            return 0;
-        }
-    };
+    let turns = muginn_adapters::iter_turns(agent, path);
+    if turns.is_empty() && !std::path::Path::new(path).exists() {
+        eprintln!("unknown agent or missing file: {agent} {path}");
+        return 0;
+    }
     let mut count = 0;
     for turn in &turns {
         for span in select_spans(turn) {
@@ -88,15 +95,37 @@ fn ingest_file(store: &Store, agent: &str, path: &str, priv_hex: &str, pub_hex: 
     count
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
     let (priv_hex, pub_hex) = load_or_create_keypair().context("key")?;
+
+    // Serve runs the MCP server, which owns its own Store.
+    if let Cmd::Serve = cli.cmd {
+        let server = muginn_server::MuginnServer::new(&db_path(), priv_hex, pub_hex);
+        return muginn_server::serve_stdio(server).await;
+    }
+
     let store = Store::open(&db_path());
 
     match cli.cmd {
+        Cmd::Serve => unreachable!(),
         Cmd::Ingest { agent, path } => {
             let n = ingest_file(&store, &agent, &path, &priv_hex, &pub_hex);
             println!("ingested {n} atoms from {path}");
+        }
+        Cmd::IngestAll { config } => {
+            let cfg = Config::load(std::path::Path::new(&config))
+                .with_context(|| format!("load config {config}"))?;
+            let transcripts = cfg.discover_transcripts();
+            let mut total = 0usize;
+            let mut files = 0usize;
+            for (agent, path) in &transcripts {
+                let n = ingest_file(&store, agent, path, &priv_hex, &pub_hex);
+                total += n;
+                files += 1;
+            }
+            println!("ingested {total} atoms from {files} transcripts across {} agents", cfg.agents.len());
         }
         Cmd::Sync { root } => {
             let root_path = std::path::Path::new(&root);
