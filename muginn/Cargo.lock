@@ -158,6 +158,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
+name = "bytecite"
+version = "0.1.0"
+dependencies = [
+ "ed25519-dalek",
+ "hex",
+ "rand_core",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "bytes"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -710,8 +722,8 @@ dependencies = [
 name = "muginn-adapters"
 version = "0.8.0"
 dependencies = [
+ "bytecite",
  "muginn-core",
- "muginn-crypto",
  "serde_json",
 ]
 
@@ -720,12 +732,12 @@ name = "muginn-cli"
 version = "0.8.0"
 dependencies = [
  "anyhow",
+ "bytecite",
  "clap",
  "dirs-next",
  "muginn-adapters",
  "muginn-compile",
  "muginn-core",
- "muginn-crypto",
  "muginn-eval",
  "muginn-render",
  "muginn-select",
@@ -745,8 +757,8 @@ name = "muginn-compile"
 version = "0.8.0"
 dependencies = [
  "anyhow",
+ "bytecite",
  "muginn-core",
- "muginn-crypto",
  "muginn-store",
  "muginn-verify",
  "serde_json",
@@ -757,19 +769,9 @@ dependencies = [
 name = "muginn-core"
 version = "0.8.0"
 dependencies = [
+ "bytecite",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "muginn-crypto"
-version = "0.8.0"
-dependencies = [
- "ed25519-dalek",
- "hex",
- "rand_core",
- "serde_json",
- "sha2",
 ]
 
 [[package]]
@@ -777,10 +779,10 @@ name = "muginn-eval"
 version = "0.8.0"
 dependencies = [
  "anyhow",
+ "bytecite",
  "muginn-adapters",
  "muginn-compile",
  "muginn-core",
- "muginn-crypto",
  "muginn-render",
  "muginn-select",
  "muginn-store",
@@ -810,10 +812,10 @@ name = "muginn-server"
 version = "0.8.0"
 dependencies = [
  "anyhow",
+ "bytecite",
  "muginn-adapters",
  "muginn-compile",
  "muginn-core",
- "muginn-crypto",
  "muginn-render",
  "muginn-select",
  "muginn-store",
@@ -831,9 +833,9 @@ name = "muginn-store"
 version = "0.8.0"
 dependencies = [
  "anyhow",
+ "bytecite",
  "chrono",
  "muginn-core",
- "muginn-crypto",
  "muginn-select",
  "rusqlite",
  "serde_json",
@@ -856,9 +858,9 @@ dependencies = [
 name = "muginn-verify"
 version = "0.8.0"
 dependencies = [
+ "bytecite",
  "muginn-adapters",
  "muginn-core",
- "muginn-crypto",
  "serde_json",
  "tempfile",
 ]

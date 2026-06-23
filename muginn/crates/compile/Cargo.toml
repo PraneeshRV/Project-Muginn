@@ -12,5 +12,5 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 
 [dev-dependencies]
-muginn-crypto = { path = "../crypto" }
+bytecite = { path = "../bytecite" }
 tempfile = "3"

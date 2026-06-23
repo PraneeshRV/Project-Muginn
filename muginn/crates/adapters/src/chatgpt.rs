@@ -3,7 +3,7 @@
 //   1. ChatGPT export JSON: { "title": "...", "mapping": { id: { message: {id, role, content} } } }
 //   2. Simple JSONL: one {role, content, id?} per line
 use muginn_core::Turn;
-use muginn_crypto::sha256_hex;
+use bytecite::sha256_hex;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 

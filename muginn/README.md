@@ -164,12 +164,13 @@ Run `muginn eval` after ingesting real transcripts for numbers that reflect your
 ```
 muginn/
   crates/
-    core/      types: Turn, Citation, Atom
-    crypto/    sha256, Ed25519 sign/verify, content_hash, atom_id
+    bytecite/  standalone, publishable: Citation, sha256, Ed25519 sign/verify,
+               content_hash, atom_id, verify_quote (pure, no file I/O)
+    core/      memory types: Turn, Atom (re-exports bytecite::Citation)
     adapters/  claude_code, codex, cursor, chatgpt transcript parsers
     select/    salience selector + topic_key
     store/     SQLite + FTS5, hash chain, staleness
-    verify/    byte-compare verifier
+    verify/    transcript-aware wrapper over bytecite::verify_quote
     render/    markdown card renderer
     vault/     Obsidian vault writer (atom notes, stale notes, page notes)
     compile/   compile trait, NullCompiler, citation enforcement

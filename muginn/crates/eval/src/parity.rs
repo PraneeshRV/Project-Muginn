@@ -11,9 +11,7 @@
 //!
 //! Reports hit@1, hit@3, hit@k (k defaults to 5).
 
-use muginn_adapters;
-use muginn_core::Turn;
-use muginn_crypto::{new_keypair, sha256_hex};
+use bytecite::new_keypair;
 use muginn_select::select_spans;
 use muginn_store::Store;
 use std::io::Write;

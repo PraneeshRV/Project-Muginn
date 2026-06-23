@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use config::Config;
 use muginn_compile::{enforce_for_topic, Compiler, NullCompiler};
-use muginn_crypto::new_keypair;
+use bytecite::new_keypair;
 use muginn_render::render_cards;
 use muginn_select::select_spans;
 use muginn_store::Store;

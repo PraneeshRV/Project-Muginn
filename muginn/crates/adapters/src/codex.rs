@@ -2,7 +2,7 @@
 // Format: JSONL where each line is a message event.
 // Relevant lines have `type == "message"` with `role` and `content` (string or array).
 use muginn_core::Turn;
-use muginn_crypto::sha256_hex;
+use bytecite::sha256_hex;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 

@@ -1,7 +1,7 @@
 // Cursor transcript adapter.
 // Format: JSONL with {role, content, id?} per line (OpenAI-style chat messages).
 use muginn_core::Turn;
-use muginn_crypto::sha256_hex;
+use bytecite::sha256_hex;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 

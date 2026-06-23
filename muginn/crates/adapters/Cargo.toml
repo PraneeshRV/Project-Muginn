@@ -6,5 +6,5 @@ license.workspace = true
 
 [dependencies]
 muginn-core = { path = "../core" }
-muginn-crypto = { path = "../crypto" }
+bytecite = { path = "../bytecite" }
 serde_json = { workspace = true }

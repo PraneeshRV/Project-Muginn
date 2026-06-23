@@ -6,7 +6,7 @@ license.workspace = true
 
 [dependencies]
 muginn-core = { path = "../core" }
-muginn-crypto = { path = "../crypto" }
+bytecite = { path = "../bytecite" }
 muginn-store = { path = "../store" }
 muginn-select = { path = "../select" }
 muginn-compile = { path = "../compile" }

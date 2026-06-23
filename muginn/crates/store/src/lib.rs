@@ -1,6 +1,6 @@
 use chrono::Utc;
 use muginn_core::{Atom, Citation, Turn};
-use muginn_crypto::{atom_id, content_hash, sign};
+use bytecite::{atom_id, content_hash, sign};
 use muginn_select::topic_key;
 use rusqlite::{params, Connection};
 use thiserror::Error;
@@ -221,10 +221,10 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use muginn_crypto::{new_keypair, verify_sig};
+    use bytecite::{new_keypair, verify_sig};
 
     fn make_turn(session_id: &str, turn_id: &str, text: &str) -> Turn {
-        use muginn_crypto::sha256_hex;
+        use bytecite::sha256_hex;
         Turn {
             agent: "claude_code".into(),
             session_id: session_id.into(),

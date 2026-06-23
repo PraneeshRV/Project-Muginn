@@ -164,7 +164,7 @@ pub fn eval_format_overhead(atoms: &[Atom]) -> FormatBenchmark {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use muginn_crypto::{new_keypair, sha256_hex};
+    use bytecite::{new_keypair, sha256_hex};
     use muginn_core::Citation;
     use std::io::Write;
     use tempfile::NamedTempFile;

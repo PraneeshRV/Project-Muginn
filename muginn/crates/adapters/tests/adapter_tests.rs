@@ -2,7 +2,7 @@ use muginn_adapters::chatgpt::iter_turns as chatgpt_turns;
 use muginn_adapters::claude_code::iter_turns as cc_turns;
 use muginn_adapters::codex::iter_turns as codex_turns;
 use muginn_adapters::cursor::iter_turns as cursor_turns;
-use muginn_crypto::sha256_hex;
+use bytecite::sha256_hex;
 
 #[test]
 fn claude_code_parse_sample_fixture() {

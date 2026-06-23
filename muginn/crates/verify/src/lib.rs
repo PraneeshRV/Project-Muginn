@@ -1,8 +1,11 @@
-use muginn_adapters;
+//! Muginn's transcript-aware verifier. It resolves an atom's source file/turn (the I/O that
+//! is specific to Muginn), then delegates the pure signature + byte-span check to `bytecite`.
+
 use muginn_core::Atom;
-use muginn_crypto::verify_sig;
+use bytecite::{verify_quote, verify_sig, QuoteStatus};
 
 pub fn verify_atom(atom: &Atom) -> &'static str {
+    // Signature first, so a forged atom is rejected before any file is opened.
     if !verify_sig(&atom.pubkey, &atom.content_hash, &atom.signature) {
         return "bad-signature";
     }
@@ -25,16 +28,18 @@ pub fn verify_atom(atom: &Atom) -> &'static str {
         return "source-modified";
     }
 
-    let bytes = turn.text.as_bytes();
-    let (start, end) = atom.citation.span;
-    if start > end || end > bytes.len() {
-        return "span-mismatch";
-    }
-    let slice = String::from_utf8_lossy(&bytes[start..end]);
-    if slice == atom.quote {
-        "ok"
-    } else {
-        "span-mismatch"
+    // Delegate the signature + byte-span comparison to the pure bytecite primitive.
+    match verify_quote(
+        turn.text.as_bytes(),
+        atom.citation.span,
+        &atom.quote,
+        &atom.content_hash,
+        &atom.signature,
+        &atom.pubkey,
+    ) {
+        QuoteStatus::Ok => "ok",
+        QuoteStatus::BadSignature => "bad-signature",
+        QuoteStatus::SpanMismatch => "span-mismatch",
     }
 }
 
@@ -42,7 +47,7 @@ pub fn verify_atom(atom: &Atom) -> &'static str {
 mod tests {
     use super::*;
     use muginn_core::{Atom, Citation};
-    use muginn_crypto::{atom_id, content_hash, new_keypair, sha256_hex, sign};
+    use bytecite::{atom_id, content_hash, new_keypair, sha256_hex, sign};
     use std::io::Write;
 
     fn make_atom(

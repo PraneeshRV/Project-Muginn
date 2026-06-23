@@ -248,7 +248,7 @@ pub fn enforce_for_topic(draft: &CompiledDraft, store: &Store, topic: &str) -> E
 mod tests {
     use super::*;
     use muginn_core::Turn;
-    use muginn_crypto::{new_keypair, sha256_hex};
+    use bytecite::{new_keypair, sha256_hex};
 
     fn tmp_store() -> (Store, tempfile::NamedTempFile) {
         let f = tempfile::NamedTempFile::new().unwrap();

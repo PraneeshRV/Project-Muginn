@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+// Citation is the general, reusable provenance type — it lives in the `bytecite` crate.
+// Re-exported here so `muginn_core::Citation` keeps resolving across the workspace.
+pub use bytecite::Citation;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Turn {
     pub agent: String,
@@ -8,16 +12,6 @@ pub struct Turn {
     pub role: String,
     pub text: String,
     pub native_path: String,
-    pub turn_sha256: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Citation {
-    pub agent: String,
-    pub native_path: String,
-    pub session_id: String,
-    pub turn_id: String,
-    pub span: (usize, usize),
     pub turn_sha256: String,
 }
 

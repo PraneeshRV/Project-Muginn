@@ -1,5 +1,5 @@
 use muginn_core::Turn;
-use muginn_crypto::sha256_hex;
+use bytecite::sha256_hex;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
