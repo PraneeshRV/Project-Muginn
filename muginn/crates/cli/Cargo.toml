@@ -18,3 +18,4 @@ muginn-verify = { path = "../verify" }
 muginn-render = { path = "../render" }
 clap = { workspace = true }
 anyhow = { workspace = true }
+dirs-next = { workspace = true }

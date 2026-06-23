@@ -1,6 +1,6 @@
 use chrono::Utc;
 use muginn_core::{Atom, Citation, Turn};
-use muginn_crypto::{atom_id, content_hash, sign, verify_sig};
+use muginn_crypto::{atom_id, content_hash, sign};
 use muginn_select::topic_key;
 use rusqlite::{params, Connection};
 use thiserror::Error;
