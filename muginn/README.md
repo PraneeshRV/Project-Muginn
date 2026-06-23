@@ -1,9 +1,16 @@
 # Muginn
 
-Verifiable memory for AI agents. Every stored fact is a verbatim quote from a native
-agent transcript, cryptographically bound to the exact byte-span it was extracted from.
-Any reader can re-open the source transcript and confirm the quote exists at the recorded
-position — no fact can survive distillation if the source byte-range no longer matches.
+**Tamper-evident provenance for AI agent memory.** Every stored fact is a verbatim quote
+from a native agent transcript, cryptographically bound (Ed25519) to the exact byte-span
+it came from. Any reader can re-open the source and confirm the quote still exists at the
+recorded position — verification is a byte comparison, not a semantic judgment.
+
+Muginn proves a quote *existed verbatim at ingest and was not edited since.* It does **not**
+prove the quote is true, and does not stop upstream injection (poison already in the
+transcript ingests like any other quote). It catches **post-hoc tampering** and
+**fabricated citations** — the [OWASP ASI06: Memory Poisoning](https://genai.owasp.org)
+defense surface. Retrieval today is keyword/FTS5; semantic recall is on the roadmap. Pair
+it with a semantic store (Mem0/Zep/MemPalace) rather than treating it as a replacement.
 
 Agents supported: Claude Code, Codex CLI, Cursor, ChatGPT. License: Apache-2.0.
 
