@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import struct
 from dataclasses import asdict
 from datetime import datetime, timezone
 
@@ -28,7 +29,8 @@ CREATE TABLE IF NOT EXISTS facts (
     stale INTEGER NOT NULL DEFAULT 0,
     session_id TEXT NOT NULL,
     tags_json TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    embedding BLOB
 );
 CREATE VIRTUAL TABLE IF NOT EXISTS facts_fts USING fts5(
     quote, content='facts', content_rowid='rowid'
@@ -40,10 +42,11 @@ END;
 
 
 class Store:
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, embedder=None):
         self.db = sqlite3.connect(db_path)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(_SCHEMA)
+        self.embedder = embedder
 
     def _last_fact_id(self, session_id: str) -> str:
         row = self.db.execute(
@@ -79,11 +82,16 @@ class Store:
         created = datetime.now(timezone.utc).isoformat()
         tags = tags or []
 
+        emb_blob = None
+        if self.embedder is not None:
+            emb = self.embedder.embed(quote)
+            emb_blob = struct.pack(f"{len(emb)}f", *emb)
+
         self._mark_superseded(key, fid)
         self.db.execute(
-            "INSERT OR IGNORE INTO facts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT OR IGNORE INTO facts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (fid, quote, json.dumps(src_dict), ch, sig, pub_hex, prev, key,
-             "", 0, turn.session_id, json.dumps(tags), created),
+             "", 0, turn.session_id, json.dumps(tags), created, emb_blob),
         )
         self.db.commit()
         return Fact(fid, quote, src, ch, sig, pub_hex, prev, key, "", False, tags, created)
@@ -96,6 +104,27 @@ class Store:
                     row["signature"], row["pubkey"], row["prev_fact_id"],
                     row["topic_key"], row["superseded_by"], bool(row["stale"]),
                     json.loads(row["tags_json"]), row["created_at"])
+
+    def vsearch(self, query_vec: list[float], k: int = 10) -> list[Fact]:
+        rows = self.db.execute(
+            "SELECT * FROM facts WHERE embedding IS NOT NULL AND stale=0"
+        ).fetchall()
+        if not rows:
+            return []
+
+        def cosine(a, b):
+            dot = sum(x * y for x, y in zip(a, b))
+            na = sum(x * x for x in a) ** 0.5
+            nb = sum(x * x for x in b) ** 0.5
+            return dot / (na * nb) if na and nb else 0.0
+
+        n = len(query_vec)
+        scored = []
+        for row in rows:
+            vec = list(struct.unpack_from(f"{n}f", row["embedding"]))
+            scored.append((cosine(query_vec, vec), row))
+        scored.sort(key=lambda x: -x[0])
+        return [self._row_to_fact(r) for _, r in scored[:k]]
 
     def get(self, fact_id: str) -> Fact | None:
         row = self.db.execute("SELECT * FROM facts WHERE fact_id=?", (fact_id,)).fetchone()
