@@ -1,7 +1,7 @@
 {
   "id": "muginn",
   "name": "Muginn",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "minAppVersion": "1.0.0",
   "description": "Live verify badges, source-jump, and coverage indicators for Muginn verifiable memory vaults.",
   "author": "Praneesh RV",

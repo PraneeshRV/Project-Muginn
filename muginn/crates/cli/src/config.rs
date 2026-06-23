@@ -35,10 +35,23 @@ impl Config {
     pub fn discover_transcripts(&self) -> Vec<(String, String)> {
         let mut out = Vec::new();
         for agent in &self.agents {
-            collect_jsonl(Path::new(&agent.root), &agent.name, &mut out);
+            collect_jsonl(&expand_tilde(&agent.root), &agent.name, &mut out);
         }
         out
     }
+}
+
+/// Expand a leading `~` / `~/` to the user's home directory. Other paths pass through.
+fn expand_tilde(p: &str) -> std::path::PathBuf {
+    if p == "~" {
+        return dirs_next::home_dir().unwrap_or_else(|| std::path::PathBuf::from("~"));
+    }
+    if let Some(rest) = p.strip_prefix("~/") {
+        if let Some(home) = dirs_next::home_dir() {
+            return home.join(rest);
+        }
+    }
+    std::path::PathBuf::from(p)
 }
 
 fn collect_jsonl(dir: &Path, agent: &str, out: &mut Vec<(String, String)>) {

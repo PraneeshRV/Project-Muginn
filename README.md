@@ -54,7 +54,8 @@ atom is marked stale and moved to `_stale/` in the vault with a unified diff. No
 is deleted.
 
 **Local-first.** No network calls in the core path. The MCP server runs over stdio.
-An optional local Ollama endpoint can be configured for the compile layer.
+A local Ollama compile backend is scaffolded (`MUGINN_COMPILE_URL`) but not yet wired in;
+the default compile path is fully offline.
 
 ---
 

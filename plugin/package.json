@@ -1,6 +1,6 @@
 {
   "name": "obsidian-muginn",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "description": "Obsidian plugin for Muginn verifiable memory",
   "main": "main.js",
   "scripts": {

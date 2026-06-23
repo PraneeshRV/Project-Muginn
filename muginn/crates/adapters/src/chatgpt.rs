@@ -47,7 +47,10 @@ pub fn iter_turns(path: &str) -> Vec<Turn> {
     // Try ChatGPT export JSON first (has "mapping" key)
     if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&raw) {
         if let Some(mapping) = obj.get("mapping").and_then(|m| m.as_object()) {
-            let mut turns = Vec::new();
+            // The mapping is keyed by node id, which iterates in id order — NOT conversation
+            // order. Capture each message's `create_time` and sort ascending so the hash
+            // chain and staleness ordering follow the real conversation timeline.
+            let mut rows: Vec<(f64, Turn)> = Vec::new();
             for (id, node) in mapping {
                 let msg = match node.get("message") {
                     Some(m) if !m.is_null() => m,
@@ -62,7 +65,8 @@ pub fn iter_turns(path: &str) -> Vec<Turn> {
                 let content = msg.get("content").unwrap_or(&serde_json::Value::Null);
                 let text = content_to_text(content);
                 if text.is_empty() { continue; }
-                turns.push(Turn {
+                let create_time = msg.get("create_time").and_then(|t| t.as_f64()).unwrap_or(0.0);
+                rows.push((create_time, Turn {
                     agent: AGENT.into(),
                     session_id: sid.clone(),
                     turn_id: id.clone(),
@@ -70,10 +74,10 @@ pub fn iter_turns(path: &str) -> Vec<Turn> {
                     text: text.clone(),
                     native_path: path.to_string(),
                     turn_sha256: sha256_hex(&text),
-                });
+                }));
             }
-            // Sort by create_time if available (best-effort ordering)
-            return turns;
+            rows.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+            return rows.into_iter().map(|(_, t)| t).collect();
         }
     }
 

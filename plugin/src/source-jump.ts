@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { Notice, Platform } from "obsidian";
 
 export interface CitationInfo {
@@ -11,22 +11,17 @@ export interface CitationInfo {
 }
 
 export function fetchCitation(muginnBin: string, atomId: string): CitationInfo | null {
+  if (!atomId) return null;
   try {
-    // muginn recall returns cards + verify lines; we need the citation JSON.
-    // Use a temp DB recall that prints structured info. Since CLI only prints cards,
-    // we grep for the citation fields from the stored data via stdout of recall.
-    // Fallback: parse native_path from atom note frontmatter (passed in from caller).
-    const out = execSync(`${muginnBin} recall "${atomId}" -k 1`, {
+    // `muginn cite <id>` prints the citation JSON. execFileSync passes argv directly —
+    // no shell — so the atom id cannot inject shell commands.
+    const out = execFileSync(muginnBin, ["cite", atomId], {
       encoding: "utf8",
       timeout: 5000,
-    });
-    // The recall output is markdown cards; citation JSON comes from `muginn cite`.
-    // For now, run recall and parse the card line: `- "<quote>" — agent:session#turn [id8]`
-    const cardLine = out.split("\n").find((l) => l.startsWith("- "));
-    if (!cardLine) return null;
-    // We can't get full citation from recall output alone. Return null so the caller
-    // uses the frontmatter fields directly.
-    return null;
+    }).trim();
+    const json = JSON.parse(out);
+    if (json.error || typeof json.native_path !== "string") return null;
+    return json as CitationInfo;
   } catch {
     return null;
   }

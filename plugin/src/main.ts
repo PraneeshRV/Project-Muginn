@@ -1,12 +1,12 @@
-import { App, Notice, Plugin, StatusBarItem, TFile, parseYaml } from "obsidian";
+import { App, Notice, Plugin, TFile, parseYaml } from "obsidian";
 import { DEFAULT_SETTINGS, MuginnSettings, MuginnSettingTab } from "./settings";
 import { runVerify, statusIcon, statusClass } from "./verify-badge";
-import { openNativePath } from "./source-jump";
-import { execSync } from "child_process";
+import { fetchCitation, openNativePath } from "./source-jump";
+import { execFileSync } from "child_process";
 
 export default class MuginnPlugin extends Plugin {
   settings: MuginnSettings;
-  private statusBar: StatusBarItem;
+  private statusBar: HTMLElement;
 
   async onload() {
     await this.loadSettings();
@@ -129,11 +129,15 @@ export default class MuginnPlugin extends Plugin {
       return;
     }
 
-    const nativePath: string = fm["native_path"] ?? "";
+    // Prefer the authoritative citation from `muginn cite`; fall back to frontmatter.
+    const citation = fetchCitation(this.settings.muginnBin, fm["atom_id"]);
     const spanRaw = fm["span"];
-    const span: [number, number] = Array.isArray(spanRaw)
-      ? [Number(spanRaw[0]), Number(spanRaw[1])]
-      : [0, 0];
+    const nativePath: string = citation?.native_path ?? fm["native_path"] ?? "";
+    const span: [number, number] = citation?.span
+      ? [Number(citation.span[0]), Number(citation.span[1])]
+      : Array.isArray(spanRaw)
+        ? [Number(spanRaw[0]), Number(spanRaw[1])]
+        : [0, 0];
 
     openNativePath(nativePath, span);
   }
@@ -149,8 +153,10 @@ export default class MuginnPlugin extends Plugin {
     const topic = fm?.["topic"] ?? file.basename;
     new Notice(`Muginn: recompiling "${topic}"…`);
     try {
-      const out = execSync(
-        `${this.settings.muginnBin} compile "${topic}"`,
+      // execFileSync with an argv array — no shell, so a crafted topic can't inject commands.
+      const out = execFileSync(
+        this.settings.muginnBin,
+        ["compile", String(topic)],
         { encoding: "utf8", timeout: 30000 }
       );
       new Notice(`Muginn: ${out.trim().split("\n")[0]}`);

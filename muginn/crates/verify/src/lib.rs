@@ -27,7 +27,7 @@ pub fn verify_atom(atom: &Atom) -> &'static str {
 
     let bytes = turn.text.as_bytes();
     let (start, end) = atom.citation.span;
-    if end > bytes.len() {
+    if start > end || end > bytes.len() {
         return "span-mismatch";
     }
     let slice = String::from_utf8_lossy(&bytes[start..end]);

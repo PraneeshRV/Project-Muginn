@@ -21,8 +21,13 @@ pub fn new_keypair() -> (String, String) {
     (hex::encode(sk.to_bytes()), hex::encode(pk.to_bytes()))
 }
 
+/// Sign `message` with a hex Ed25519 secret key. Returns an empty string on a malformed
+/// key (rather than panicking); an empty signature simply fails `verify_sig` downstream.
 pub fn sign(priv_hex: &str, message: &str) -> String {
-    let bytes: [u8; 32] = hex::decode(priv_hex).unwrap().try_into().unwrap();
+    let bytes: [u8; 32] = match hex::decode(priv_hex).ok().and_then(|b| b.try_into().ok()) {
+        Some(b) => b,
+        None => return String::new(),
+    };
     let sk = SigningKey::from_bytes(&bytes);
     hex::encode(sk.sign(message.as_bytes()).to_bytes())
 }

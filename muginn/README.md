@@ -20,6 +20,10 @@ muginn ingest claude_code ~/.claude/projects/<slug>/<uuid>.jsonl
 # Search memory
 muginn recall "Ed25519"
 
+# Verify or cite a single atom by id (used by the Obsidian plugin)
+muginn verify <atom_id>   # prints: ok | bad-signature | source-missing | … | not-found
+muginn cite   <atom_id>   # prints the citation JSON {agent, session, turn, span}
+
 # Run the eval harness against your live store
 muginn eval
 ```
@@ -60,11 +64,15 @@ invalidates existing atoms.
 
 ### Citation enforcement
 
-`muginn compile <topic>` retrieves atoms, generates prose (via `NullCompiler` by default,
-or a local Ollama endpoint via `MUGINN_COMPILE_URL`), and enforces that every sentence
+`muginn compile <topic>` retrieves atoms, generates prose (currently via `NullCompiler`,
+which emits one sentence per atom — each citing itself), and enforces that every sentence
 cites at least one atom whose `verify` status is `ok`. Sentences with no citation, a
 missing atom, or a non-`ok` verify result are quarantined and surfaced in an Obsidian
 warning callout — never silently included in the compiled page.
+
+A `LocalCompiler` that POSTs to a local Ollama/llama.cpp endpoint (`MUGINN_COMPILE_URL`)
+exists in the `compile` crate but is not yet wired into the CLI or MCP server — the
+default `compile` path always uses `NullCompiler`.
 
 ### Staleness
 
@@ -108,15 +116,19 @@ MCP tools: `recall`, `verify`, `cite`, `ingest`, `compile`.
 
 ```toml
 # muginn.toml
-[agents.claude_code]
-roots = ["~/.claude/projects"]
+vault_root = "~/vaults/muginn"   # reserved; `sync` currently takes --root
 
-[agents.codex]
-roots = ["~/.codex/history"]
+[[agents]]
+name = "claude_code"
+root = "~/.claude/projects"
 
-[vault]
-root = "~/vaults/muginn"
+[[agents]]
+name = "codex"
+root = "~/.codex/sessions"
 ```
+
+`root` paths may start with `~` (expanded to your home directory). `ingest-all`
+recursively collects every `*.jsonl` under each agent root.
 
 ```bash
 muginn ingest-all --config muginn.toml

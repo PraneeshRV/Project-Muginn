@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 
 export type VerifyStatus =
   | "ok"
@@ -34,14 +34,14 @@ const STATUS_CLASS: Record<VerifyStatus, string> = {
 
 export function runVerify(muginnBin: string, atomId: string): VerifyStatus {
   try {
-    const out = execSync(`${muginnBin} recall "${atomId}" -k 1`, {
+    // `muginn verify <id>` prints a single status string. execFileSync passes argv
+    // directly — no shell — so the atom id cannot inject shell commands.
+    const out = execFileSync(muginnBin, ["verify", atomId], {
       encoding: "utf8",
       timeout: 5000,
     });
-    // Parse verify status line: "  verify[<id8>] = <status>"
-    const match = out.match(/verify\[[\w]+\]\s*=\s*(\S+)/);
-    if (!match) return "not-found";
-    const s = match[1] as VerifyStatus;
+    const s = out.trim().split("\n").pop()?.trim() as VerifyStatus;
+    if (!s) return "not-found";
     return STATUS_ICON[s] ? s : "error";
   } catch {
     return "error";

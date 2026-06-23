@@ -11,6 +11,7 @@ use muginn_store::Store;
 use muginn_vault::{resolve_project, write_atom_note, write_page_note, write_stale_note};
 use muginn_verify::verify_atom;
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
 #[derive(Parser)]
@@ -37,6 +38,14 @@ enum Cmd {
         query: String,
         #[arg(short, long, default_value = "5")]
         k: usize,
+    },
+    /// Verify a single atom by id: re-open source, byte-compare. Prints a status string.
+    Verify {
+        atom_id: String,
+    },
+    /// Print the exact citation JSON {agent, session, turn, span} for an atom by id.
+    Cite {
+        atom_id: String,
     },
     Sync {
         #[arg(long, default_value = ".")]
@@ -83,6 +92,7 @@ fn load_or_create_keypair() -> Result<(String, String)> {
     }
     let (priv_hex, pub_hex) = new_keypair();
     fs::write(&kp, format!("{}\n{}", priv_hex, pub_hex))?;
+    #[cfg(unix)]
     fs::set_permissions(&kp, fs::Permissions::from_mode(0o600))?;
     Ok((priv_hex, pub_hex))
 }
@@ -212,6 +222,18 @@ async fn main() -> Result<()> {
                 println!("  verify[{id8}] = {status}");
             }
         }
+        Cmd::Verify { atom_id } => match store.get(&atom_id) {
+            Some(atom) => println!("{}", verify_atom(&atom)),
+            None => println!("not-found"),
+        },
+        Cmd::Cite { atom_id } => match store.get(&atom_id) {
+            Some(atom) => println!(
+                "{}",
+                serde_json::to_string(&atom.citation)
+                    .unwrap_or_else(|_| "{\"error\":\"serialize failed\"}".to_string())
+            ),
+            None => println!("{{\"error\":\"not-found\",\"atom_id\":\"{atom_id}\"}}"),
+        },
         Cmd::Eval { selector_fixture, poison_n } => {
             println!("muginn eval\n");
 
