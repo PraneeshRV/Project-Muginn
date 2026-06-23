@@ -1,0 +1,70 @@
+/* Muginn plugin styles */
+
+/* ── Status bar badges ──────────────────────────────────────────────────── */
+.muginn-ok {
+  color: var(--color-green);
+}
+.muginn-bad {
+  color: var(--color-red);
+  font-weight: bold;
+}
+.muginn-warn {
+  color: var(--color-orange);
+}
+.muginn-unknown {
+  color: var(--text-muted);
+}
+.muginn-error {
+  color: var(--color-red);
+  opacity: 0.7;
+}
+
+/* ── Stale atom notes (_stale/ folder) ──────────────────────────────────── */
+/*
+  In Obsidian, file explorer items can be targeted by data-path.
+  This targets any note whose path contains "_stale/" and greys it out.
+*/
+.nav-file-title[data-path*="/_stale/"] {
+  color: var(--text-muted);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.nav-file-title[data-path*="/_stale/"]:hover {
+  opacity: 0.85;
+}
+
+/* ── Stale frontmatter property styling ─────────────────────────────────── */
+/*
+  When a note has stale: true in frontmatter, Obsidian renders
+  the frontmatter as a properties block. Target the property value.
+*/
+.metadata-property[data-property-key="stale"] .metadata-property-value {
+  color: var(--color-orange);
+}
+
+/* ── Coverage indicator on page notes ───────────────────────────────────── */
+.metadata-property[data-property-key="coverage"] .metadata-property-value {
+  font-weight: 500;
+}
+
+/* ── Quarantine callout (rendered in compiled page notes) ───────────────── */
+/*
+  Obsidian callout: > [!warning] Unverified
+  Styled with the default warning colors; override opacity for unverified claims.
+*/
+.callout[data-callout="warning"] .callout-content {
+  opacity: 0.85;
+}
+
+/* ── Wikilink citation style ────────────────────────────────────────────── */
+/*
+  Atom wikilinks in compiled pages (e.g. [[abc12345]]) get a subtle badge look
+  to distinguish source citations from regular links.
+*/
+.internal-link[href^="atoms/"] {
+  background: var(--background-modifier-hover);
+  border-radius: 3px;
+  padding: 0 3px;
+  font-size: 0.85em;
+}
