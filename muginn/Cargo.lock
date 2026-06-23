@@ -558,6 +558,7 @@ dependencies = [
  "muginn-render",
  "muginn-select",
  "muginn-store",
+ "muginn-vault",
  "muginn-verify",
 ]
 
@@ -608,6 +609,15 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
+]
+
+[[package]]
+name = "muginn-vault"
+version = "0.1.0"
+dependencies = [
+ "muginn-core",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

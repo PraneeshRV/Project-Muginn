@@ -16,6 +16,7 @@ muginn-select = { path = "../select" }
 muginn-store = { path = "../store" }
 muginn-verify = { path = "../verify" }
 muginn-render = { path = "../render" }
+muginn-vault = { path = "../vault" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 dirs-next = { workspace = true }
