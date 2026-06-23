@@ -8,3 +8,7 @@ license.workspace = true
 muginn-core = { path = "../core" }
 muginn-crypto = { path = "../crypto" }
 muginn-adapters = { path = "../adapters" }
+
+[dev-dependencies]
+tempfile = "3"
+serde_json = { workspace = true }
