@@ -15,7 +15,10 @@ class AntigravityAdapter:
 
     def iter_turns(self, path: str) -> Iterator[Turn]:
         with open(path, "r", encoding="utf-8") as fh:
-            doc = json.load(fh)
+            try:
+                doc = json.load(fh)
+            except json.JSONDecodeError:
+                return
         session_id = str(doc.get("sessionId", ""))
         for m in doc.get("messages", []):
             text = m.get("text", "")

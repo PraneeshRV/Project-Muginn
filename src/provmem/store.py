@@ -103,9 +103,12 @@ class Store:
 
     def search(self, query: str, k: int = 10, include_stale: bool = False) -> list[Fact]:
         clause = "" if include_stale else "AND f.stale=0 "
-        rows = self.db.execute(
-            "SELECT f.* FROM facts_fts ft JOIN facts f ON f.rowid=ft.rowid "
-            f"WHERE facts_fts MATCH ? {clause}ORDER BY rank LIMIT ?",
-            (query, k),
-        ).fetchall()
+        try:
+            rows = self.db.execute(
+                "SELECT f.* FROM facts_fts ft JOIN facts f ON f.rowid=ft.rowid "
+                f"WHERE facts_fts MATCH ? {clause}ORDER BY rank LIMIT ?",
+                (query, k),
+            ).fetchall()
+        except Exception:
+            return []
         return [self._row_to_fact(r) for r in rows]
