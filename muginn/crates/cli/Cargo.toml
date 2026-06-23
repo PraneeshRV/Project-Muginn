@@ -1,0 +1,20 @@
+[package]
+name = "muginn-cli"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "muginn"
+path = "src/main.rs"
+
+[dependencies]
+muginn-core = { path = "../core" }
+muginn-crypto = { path = "../crypto" }
+muginn-adapters = { path = "../adapters" }
+muginn-select = { path = "../select" }
+muginn-store = { path = "../store" }
+muginn-verify = { path = "../verify" }
+muginn-render = { path = "../render" }
+clap = { workspace = true }
+anyhow = { workspace = true }
