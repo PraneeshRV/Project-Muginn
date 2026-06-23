@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use muginn_adapters::claude_code;
 use muginn_crypto::new_keypair;
 use muginn_render::render_cards;
 use muginn_select::select_spans;
@@ -70,13 +69,11 @@ fn load_or_create_keypair() -> Result<(String, String)> {
 }
 
 fn ingest_file(store: &Store, agent: &str, path: &str, priv_hex: &str, pub_hex: &str) -> usize {
-    let turns = match agent {
-        "claude_code" => claude_code::iter_turns(path),
-        other => {
-            eprintln!("unknown agent: {other}");
-            return 0;
-        }
-    };
+    let turns = muginn_adapters::iter_turns(agent, path);
+    if turns.is_empty() && !std::path::Path::new(path).exists() {
+        eprintln!("unknown agent or missing file: {agent} {path}");
+        return 0;
+    }
     let mut count = 0;
     for turn in &turns {
         for span in select_spans(turn) {

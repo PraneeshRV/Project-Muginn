@@ -1,0 +1,3 @@
+{"id":"g1","role":"user","content":"how should we handle errors"}
+{"id":"g2","role":"assistant","content":"Decision: use Result types because they make errors explicit and composable."}
+{"id":"g3","role":"user","content":"perfect"}

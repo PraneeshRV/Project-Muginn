@@ -1,0 +1,5 @@
+{"type":"session_start","id":"sess1"}
+{"type":"message","id":"m1","role":"user","content":"fix the login flow"}
+{"type":"message","id":"m2","role":"assistant","content":"Decision: use JWT because it is stateless and scalable."}
+{"type":"tool_call","id":"tc1","name":"edit_file"}
+{"type":"message","id":"m3","role":"user","content":"looks good"}
