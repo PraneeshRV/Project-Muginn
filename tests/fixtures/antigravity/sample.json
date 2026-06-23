@@ -1,0 +1,1 @@
+{"sessionId":"ag-3","messages":[{"id":"x1","role":"user","text":"refactor module"},{"id":"x2","role":"assistant","text":"Decision: split parser into its own file."}]}
