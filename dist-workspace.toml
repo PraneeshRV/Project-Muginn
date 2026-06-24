@@ -1,0 +1,20 @@
+# cargo-dist workspace root. The Cargo workspace lives in muginn/, not the repo root,
+# so this file tells cargo-dist (run from the repo root in CI) where to find it.
+[workspace]
+members = ["cargo:muginn"]
+
+[dist]
+cargo-dist-version = "0.22.1"
+ci = ["github"]
+installers = ["shell", "powershell"]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
+pr-run-mode = "upload"
+
+# cargo-dist 0.22.1 defaults to runners GitHub has since retired (ubuntu-20.04,
+# windows-2019, macos-13). Pin every job to a currently-supported hosted runner.
+[dist.github-custom-runners]
+global = "ubuntu-22.04"
+x86_64-unknown-linux-gnu = "ubuntu-22.04"
+x86_64-pc-windows-msvc = "windows-2022"
+x86_64-apple-darwin = "macos-14"
+aarch64-apple-darwin = "macos-14"

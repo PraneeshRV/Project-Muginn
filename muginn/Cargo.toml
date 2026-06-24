@@ -25,22 +25,8 @@ tokio = { version = "=1.40.0", features = ["full"] }
 rmcp = { version = "0.1", features = ["server"] }
 toml = "0.8"
 
-# cargo-dist: build native binaries for macOS, Linux, Windows
-[workspace.metadata.dist]
-cargo-dist-version = "0.22.1"
-ci = ["github"]
-installers = ["shell", "powershell"]
-targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
-pr-run-mode = "upload"
-
-# cargo-dist 0.22.1 defaults to runners GitHub has since retired (ubuntu-20.04,
-# windows-2019, macos-13). Pin every job to a currently-supported hosted runner.
-[workspace.metadata.dist.github-custom-runners]
-global = "ubuntu-22.04"
-x86_64-unknown-linux-gnu = "ubuntu-22.04"
-x86_64-pc-windows-msvc = "windows-2022"
-x86_64-apple-darwin = "macos-14"
-aarch64-apple-darwin = "macos-14"
+# cargo-dist config lives in ../dist-workspace.toml (the Cargo workspace is nested
+# under muginn/, so cargo-dist is rooted at the repo root, not here).
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
