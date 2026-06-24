@@ -58,9 +58,7 @@ mod tests {
         priv_hex: &str,
         pub_hex: &str,
     ) -> Atom {
-        let quote = std::str::from_utf8(&text.as_bytes()[span.0..span.1])
-            .unwrap()
-            .to_string();
+        let quote = text[span.0..span.1].to_string();
         let turn_sha = sha256_hex(text);
         let citation = Citation {
             agent: "claude_code".into(),

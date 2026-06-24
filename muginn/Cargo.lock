@@ -720,7 +720,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-adapters"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bytecite",
  "muginn-core",
@@ -729,7 +729,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-cli"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "bytecite",
@@ -754,7 +754,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-compile"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "bytecite",
@@ -767,7 +767,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-core"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bytecite",
  "serde",
@@ -776,7 +776,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-eval"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "bytecite",
@@ -794,14 +794,14 @@ dependencies = [
 
 [[package]]
 name = "muginn-render"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "muginn-core",
 ]
 
 [[package]]
 name = "muginn-select"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "muginn-core",
  "regex",
@@ -809,7 +809,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-server"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "bytecite",
@@ -830,7 +830,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-store"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "bytecite",
@@ -845,7 +845,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-vault"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "chrono",
  "muginn-compile",
@@ -856,7 +856,7 @@ dependencies = [
 
 [[package]]
 name = "muginn-verify"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bytecite",
  "muginn-adapters",

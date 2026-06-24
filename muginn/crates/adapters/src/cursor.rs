@@ -19,7 +19,7 @@ pub fn iter_turns(path: &str) -> Vec<Turn> {
     };
     let mut out = Vec::new();
     let mut idx = 0usize;
-    for line in BufReader::new(f).lines().flatten() {
+    for line in BufReader::new(f).lines().map_while(Result::ok) {
         let line = line.trim().to_string();
         if line.is_empty() { continue; }
         let obj: serde_json::Value = match serde_json::from_str(&line) {

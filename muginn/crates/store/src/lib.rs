@@ -139,7 +139,42 @@ impl Store {
         })
     }
 
+    /// Resolve a full atom id, or an unambiguous id *prefix* (e.g. the short id
+    /// `recall` prints), to the full atom id. Returns `None` if nothing matches or
+    /// the prefix is ambiguous. Exact matches always win and are never treated as
+    /// prefixes. A prefix containing SQL `LIKE` wildcards (`%`/`_`) is rejected, so
+    /// it can only ever resolve to one stored id, never a wider set.
+    fn resolve_id(&self, atom_id: &str) -> Option<String> {
+        // Exact match first — a full id is unambiguous even if it prefixes others.
+        if let Ok(id) = self.conn.query_row(
+            "SELECT atom_id FROM atoms WHERE atom_id = ?",
+            params![atom_id],
+            |row| row.get::<_, String>(0),
+        ) {
+            return Some(id);
+        }
+        // Don't let a wildcard-bearing prefix fan out across the table.
+        if atom_id.is_empty() || atom_id.contains(['%', '_']) {
+            return None;
+        }
+        // Unique-prefix fallback. LIMIT 2 so we can tell unique from ambiguous.
+        let mut stmt = self
+            .conn
+            .prepare("SELECT atom_id FROM atoms WHERE atom_id LIKE ?1 || '%' LIMIT 2")
+            .ok()?;
+        let ids: Vec<String> = stmt
+            .query_map(params![atom_id], |row| row.get::<_, String>(0))
+            .ok()?
+            .flatten()
+            .collect();
+        match ids.as_slice() {
+            [only] => Some(only.clone()),
+            _ => None, // 0 = not found, >1 = ambiguous
+        }
+    }
+
     pub fn get(&self, atom_id: &str) -> Option<Atom> {
+        let atom_id = self.resolve_id(atom_id)?;
         self.conn
             .query_row(
                 "SELECT atom_id, quote, citation_json, content_hash, signature, pubkey,
@@ -296,5 +331,50 @@ mod tests {
         assert_eq!(stale_all.len(), 2, "2 total including stale");
         let a1_refreshed = store.get(&a1.atom_id).unwrap();
         assert!(a1_refreshed.stale);
+    }
+
+    #[test]
+    fn get_resolves_short_id_prefix() {
+        let db = tempfile::NamedTempFile::new().unwrap();
+        let store = Store::open(db.path().to_str().unwrap());
+        let (priv_hex, pub_hex) = new_keypair();
+        let turn = make_turn("s1", "t1", "Decision: use Ed25519 because it is fast and small.");
+        let atom = store
+            .store_atom(&turn, (0, turn.text.len()), &priv_hex, &pub_hex, vec![])
+            .unwrap();
+        // The 8-char prefix `recall` prints must resolve to the full atom.
+        let short = &atom.atom_id[..8];
+        assert_eq!(store.get(short).unwrap().atom_id, atom.atom_id);
+        // Full id still works, and a non-matching id is still None.
+        assert_eq!(store.get(&atom.atom_id).unwrap().atom_id, atom.atom_id);
+        assert!(store.get("ffffffff").is_none());
+        // Wildcard prefixes must not fan out to a match.
+        assert!(store.get("%").is_none());
+        assert!(store.get("_").is_none());
+    }
+
+    #[test]
+    fn get_ambiguous_prefix_returns_none() {
+        let db = tempfile::NamedTempFile::new().unwrap();
+        let store = Store::open(db.path().to_str().unwrap());
+        let (priv_hex, pub_hex) = new_keypair();
+        let a = store
+            .store_atom(&make_turn("s1", "t1", "alpha one because reasons here."), (0, 30), &priv_hex, &pub_hex, vec![])
+            .unwrap();
+        let b = store
+            .store_atom(&make_turn("s2", "t2", "beta two because other reasons."), (0, 31), &priv_hex, &pub_hex, vec![])
+            .unwrap();
+        // Longest common prefix of the two ids is ambiguous → None.
+        let common: String = a
+            .atom_id
+            .chars()
+            .zip(b.atom_id.chars())
+            .take_while(|(x, y)| x == y)
+            .map(|(x, _)| x)
+            .collect();
+        assert!(store.get(&common).is_none(), "shared prefix must be ambiguous");
+        // But each full id still resolves to itself.
+        assert_eq!(store.get(&a.atom_id).unwrap().atom_id, a.atom_id);
+        assert_eq!(store.get(&b.atom_id).unwrap().atom_id, b.atom_id);
     }
 }

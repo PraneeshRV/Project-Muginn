@@ -51,6 +51,6 @@ mod tests {
     #[test]
     fn turn_slice_decodes() {
         let t = "hello world";
-        assert_eq!(std::str::from_utf8(&t.as_bytes()[0..5]).unwrap(), "hello");
+        assert_eq!(&t[0..5], "hello");
     }
 }

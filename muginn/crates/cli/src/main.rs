@@ -222,17 +222,27 @@ async fn main() -> Result<()> {
                 println!("  verify[{id8}] = {status}");
             }
         }
-        Cmd::Verify { atom_id } => match store.get(&atom_id) {
-            Some(atom) => println!("{}", verify_atom(&atom)),
-            None => println!("not-found"),
-        },
+        Cmd::Verify { atom_id } => {
+            let status = match store.get(&atom_id) {
+                Some(atom) => verify_atom(&atom),
+                None => "not-found",
+            };
+            println!("{status}");
+            // Non-zero exit on any non-`ok` status so scripts/CI can gate on it.
+            if status != "ok" {
+                std::process::exit(1);
+            }
+        }
         Cmd::Cite { atom_id } => match store.get(&atom_id) {
             Some(atom) => println!(
                 "{}",
                 serde_json::to_string(&atom.citation)
                     .unwrap_or_else(|_| "{\"error\":\"serialize failed\"}".to_string())
             ),
-            None => println!("{{\"error\":\"not-found\",\"atom_id\":\"{atom_id}\"}}"),
+            None => {
+                println!("{{\"error\":\"not-found\",\"atom_id\":\"{atom_id}\"}}");
+                std::process::exit(1);
+            }
         },
         Cmd::Eval { selector_fixture, poison_n } => {
             println!("muginn eval\n");

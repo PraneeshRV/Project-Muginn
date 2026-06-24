@@ -30,7 +30,7 @@ pub fn iter_turns(path: &str) -> Vec<Turn> {
         Err(_) => return vec![],
     };
     let mut out = Vec::new();
-    for line in BufReader::new(f).lines().flatten() {
+    for line in BufReader::new(f).lines().map_while(Result::ok) {
         let line = line.trim().to_string();
         if line.is_empty() {
             continue;

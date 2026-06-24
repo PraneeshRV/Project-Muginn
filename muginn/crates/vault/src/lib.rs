@@ -82,7 +82,7 @@ fn extract_claude_code_slug(path: &Path) -> Option<String> {
     let mut found_projects = false;
     while let Some(c) = components.next() {
         let s = c.as_os_str().to_string_lossy();
-        if s == "projects" && found_projects == false {
+        if s == "projects" && !found_projects {
             found_projects = true;
             // next component is the slug
             if let Some(slug_comp) = components.next() {

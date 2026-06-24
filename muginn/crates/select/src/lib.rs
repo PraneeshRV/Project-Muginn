@@ -26,8 +26,7 @@ fn split_sentences(text: &str) -> Vec<&str> {
     let mut start = 0;
     let chars: Vec<(usize, char)> = text.char_indices().collect();
 
-    for i in 0..chars.len() {
-        let (byte_pos, ch) = chars[i];
+    for &(byte_pos, ch) in &chars {
         if ch == '.' || ch == '!' || ch == '?' {
             let end = byte_pos + ch.len_utf8();
             let s = text[start..end].trim();

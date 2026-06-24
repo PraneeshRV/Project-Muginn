@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.8.1 - 2026-06-24
+
+Patch release.
+
+### Fixes
+
+- **`verify` / `cite` now accept the short atom id that `recall` prints.** `recall`
+  surfaces an 8-character id prefix (e.g. `verify[d027121b]`), but `verify` and `cite`
+  did an exact 64-char lookup, so the printed id always returned `not-found` — over both
+  the CLI and the MCP server. `Store::get` now resolves an unambiguous id prefix to the
+  full id (git short-hash style): exact matches still win, ambiguous or wildcard-bearing
+  prefixes resolve to nothing, never the wrong atom.
+- **`verify` and `cite` exit non-zero on failure.** Both previously exited `0` even on
+  `not-found` / `source-modified`, so scripts couldn't gate on the result. A non-`ok`
+  verify status and a not-found cite now exit `1` (the status text is still printed).
+- **Clippy clean** — fixed `flatten()`-on-`Result` (could loop on a persistently erroring
+  reader; now `map_while(Result::ok)`) across the four adapters, plus minor lints in
+  `core`, `select`, `verify`, and `vault`. `cargo clippy --workspace --all-targets` now
+  reports 0 warnings.
+
+54 tests passing, 0 clippy warnings.
+
 ## 0.8.0 - 2026-06-24
 
 First public release.
