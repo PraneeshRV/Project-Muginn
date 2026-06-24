@@ -5,6 +5,7 @@ members = ["crates/*"]
 [workspace.package]
 edition = "2021"
 license = "Apache-2.0"
+repository = "https://github.com/PraneeshRV/Project-Muginn"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -31,3 +32,17 @@ ci = ["github"]
 installers = ["shell", "powershell"]
 targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
 pr-run-mode = "upload"
+
+# cargo-dist 0.22.1 defaults to runners GitHub has since retired (ubuntu-20.04,
+# windows-2019, macos-13). Pin every job to a currently-supported hosted runner.
+[workspace.metadata.dist.github-custom-runners]
+global = "ubuntu-22.04"
+x86_64-unknown-linux-gnu = "ubuntu-22.04"
+x86_64-pc-windows-msvc = "windows-2022"
+x86_64-apple-darwin = "macos-14"
+aarch64-apple-darwin = "macos-14"
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
