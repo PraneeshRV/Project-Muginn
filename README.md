@@ -39,6 +39,9 @@ edited since.** Be precise about what that does and doesn't buy:
 If you need *semantic* recall, use Mem0 / Zep / MemPalace. Muginn's job is the
 **verifiable-provenance layer over** whatever you store and retrieve.
 
+See it in ~10 seconds — [`bash scripts/demo.sh`](DEMO.md): ingest a fact, edit its source,
+watch verification flip to `source-modified`; then watch a fabricated citation fail.
+
 ---
 
 ## Structure
@@ -59,10 +62,25 @@ MCP config.
 
 ## Install
 
+Prebuilt binaries (no toolchain needed) — macOS, Linux, Windows:
+
+```bash
+# macOS / Linux
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/PraneeshRV/Project-Muginn/releases/latest/download/muginn-cli-installer.sh | sh
+# Windows (PowerShell)
+irm https://github.com/PraneeshRV/Project-Muginn/releases/latest/download/muginn-cli-installer.ps1 | iex
+```
+
+Or from source:
+
 ```bash
 cd muginn
 cargo install --path crates/cli
+```
 
+Then:
+
+```bash
 muginn ingest claude_code ~/.claude/projects/<slug>/<uuid>.jsonl
 muginn recall "Ed25519"
 ```

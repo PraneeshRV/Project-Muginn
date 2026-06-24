@@ -285,10 +285,12 @@ async fn main() -> Result<()> {
                 println!();
 
                 let fmt = muginn_eval::eval_format_overhead(&all_atoms);
-                println!("format overhead  (markdown cards vs JSON)");
+                println!("format overhead  (markdown cards vs JSON vs TOON)");
                 println!("  md chars          {}", fmt.md_chars);
                 println!("  json chars        {}", fmt.json_chars);
+                println!("  toon chars        {}", fmt.toon_chars);
                 println!("  json/md ratio     {:.2}x", fmt.json_overhead_ratio);
+                println!("  toon/json ratio   {:.2}x  (<1.0 = TOON smaller, same data)", fmt.toon_vs_json_ratio);
             }
             println!();
 

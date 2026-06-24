@@ -158,7 +158,9 @@ Reports:
 - **Poison rejection** — fraction of injected fabricated atom IDs that are quarantined.
   Fabricated IDs cannot exist in the store, so rejection is 100% by construction.
 - **Staleness precision / recall** — accuracy of stale labeling against expected supersession.
-- **Format overhead** — character count ratio of JSON serialization vs markdown card output.
+- **Format overhead** — character counts for the same atoms as markdown cards, full JSON,
+  and TOON (token-oriented notation). Markdown is leanest; TOON runs ~0.8× JSON on the
+  structured records (the long hex provenance fields limit TOON's key-dedup savings).
 - **LongMemEval / LoCoMo offline subset** — hit@1/3/5 on bundled 5-question fixtures using
   FTS5 keyword retrieval.
 

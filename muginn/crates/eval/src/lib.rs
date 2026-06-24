@@ -144,20 +144,96 @@ pub fn eval_staleness(labeled: &[(Atom, bool)]) -> StalenessMetrics {
 pub struct FormatBenchmark {
     pub md_chars: usize,
     pub json_chars: usize,
-    /// json_chars / md_chars — how much larger JSON is vs markdown
+    /// TOON (Token-Oriented Object Notation) tabular encoding of the same flattened atoms.
+    pub toon_chars: usize,
+    /// json_chars / md_chars — how much larger full-atom JSON is vs the markdown card.
     pub json_overhead_ratio: f64,
+    /// toon / json on identical flattened data (<1.0 means TOON is smaller than JSON).
+    pub toon_vs_json_ratio: f64,
 }
 
-/// Compare markdown card rendering vs JSON serialization for the same atoms.
+/// Fields, in order, of the flattened atom record used for the JSON-vs-TOON comparison.
+const ATOM_FIELDS: &[&str] = &[
+    "id", "quote", "agent", "native_path", "session", "turn", "start", "end",
+    "turn_sha256", "content_hash", "signature", "pubkey", "prev", "topic_key",
+    "superseded_by", "stale", "created_at", "tags",
+];
+
+/// Flatten an atom to a single-level JSON object (citation fields hoisted up), so the
+/// JSON-vs-TOON comparison runs on identical, uniform records.
+fn flatten_atom(a: &Atom) -> serde_json::Value {
+    serde_json::json!({
+        "id": a.atom_id,
+        "quote": a.quote,
+        "agent": a.citation.agent,
+        "native_path": a.citation.native_path,
+        "session": a.citation.session_id,
+        "turn": a.citation.turn_id,
+        "start": a.citation.span.0,
+        "end": a.citation.span.1,
+        "turn_sha256": a.citation.turn_sha256,
+        "content_hash": a.content_hash,
+        "signature": a.signature,
+        "pubkey": a.pubkey,
+        "prev": a.prev_atom_id,
+        "topic_key": a.topic_key,
+        "superseded_by": a.superseded_by,
+        "stale": a.stale,
+        "created_at": a.created_at,
+        "tags": a.tags.join("|"),
+    })
+}
+
+/// One TOON cell: stringify a JSON scalar, quoting only when the value contains a
+/// delimiter, quote, colon, newline, or edge whitespace (TOON quoting rules).
+fn toon_cell(v: Option<&serde_json::Value>) -> String {
+    let s = match v {
+        Some(serde_json::Value::String(s)) => s.clone(),
+        Some(serde_json::Value::Null) | None => String::new(),
+        Some(other) => other.to_string(),
+    };
+    let needs_quote = s.is_empty()
+        || s.contains([',', '"', ':', '\n'])
+        || s.starts_with(' ')
+        || s.ends_with(' ');
+    if needs_quote {
+        format!("\"{}\"", s.replace('"', "\"\""))
+    } else {
+        s
+    }
+}
+
+/// Minimal TOON tabular encoder for a uniform array of flat objects:
+/// `atoms[N]{field,...}:` header, then one comma-separated indented row per object.
+fn toon_encode(rows: &[serde_json::Value]) -> String {
+    let mut out = format!("atoms[{}]{{{}}}:", rows.len(), ATOM_FIELDS.join(","));
+    for row in rows {
+        let cells: Vec<String> = ATOM_FIELDS.iter().map(|f| toon_cell(row.get(*f))).collect();
+        out.push_str("\n  ");
+        out.push_str(&cells.join(","));
+    }
+    out
+}
+
+/// Compare formats for the same atoms: markdown cards (human) vs full-atom JSON, plus a
+/// JSON-vs-TOON comparison on identical flattened records.
 pub fn eval_format_overhead(atoms: &[Atom]) -> FormatBenchmark {
     use muginn_render::render_cards;
     let md = render_cards(atoms);
     let json = serde_json::to_string(atoms).unwrap_or_default();
     let json_overhead_ratio = if md.is_empty() { 1.0 } else { json.len() as f64 / md.len() as f64 };
+
+    let rows: Vec<serde_json::Value> = atoms.iter().map(flatten_atom).collect();
+    let json_flat = serde_json::to_string(&rows).unwrap_or_default();
+    let toon = toon_encode(&rows);
+    let toon_vs_json_ratio = if json_flat.is_empty() { 1.0 } else { toon.len() as f64 / json_flat.len() as f64 };
+
     FormatBenchmark {
         md_chars: md.len(),
         json_chars: json.len(),
+        toon_chars: toon.len(),
         json_overhead_ratio,
+        toon_vs_json_ratio,
     }
 }
 
